@@ -10,7 +10,7 @@ const otpRoute = require('./routers/otp_routers')
 const path = require('path');
 
 app.use(cors({
-  origin: ['http://localhost:5173']
+  origin: ['http://localhost:5173','https://frozenwonder-frontend.onrender.com']
 }));
 
 app.use(express.json());
