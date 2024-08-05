@@ -32,7 +32,9 @@ const mongoose = require('mongoose');
 const packSchema = new mongoose.Schema({
   ml: { type: Number, required: true },
   unit: { type: Number, required: true },
-  price: { type: Number, required: true }
+  price: { type: Number, required: true },
+  discount: { type: Number, default: 0 },
+  inventory:  { type: Number, default: 0 },
 });
 
 const productSchema = new mongoose.Schema({
@@ -40,7 +42,8 @@ const productSchema = new mongoose.Schema({
   desc: { type: String, required: true },
   packs: [packSchema],
   image: { type: String, required: true },
-  discount: { type: Number, default: 0 },
+  
+  
 }, { timestamps: true });
 
 module.exports = mongoose.model('products', productSchema);

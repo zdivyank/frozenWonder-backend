@@ -4,6 +4,7 @@ const path = require('path');
 const product = require('../models/product_model');
 let streamifier = require('streamifier');
 const cloudinary = require('cloudinary');
+const { default: mongoose } = require('mongoose');
 
 
 
@@ -49,7 +50,7 @@ const upload = multer({ storage: storage })
 
 const addproducts = async (req, res) => {
   try {
-    const { name, desc,discount,packs} = req.body;
+    const { name, desc,packs} = req.body;
 
     // Upload image to Cloudinary
     const uploadPromise = new Promise((resolve, reject) => {
@@ -73,7 +74,7 @@ const addproducts = async (req, res) => {
       desc,
       packs:parsedPacks,
       image: uploadResult.secure_url,
-      discount
+     
     });
 
     return res.status(200).json({ message: newproduct });
@@ -148,8 +149,8 @@ const singleproduct = async (req, res)=>
 
 const updateProduct = async (req, res) => {
   try {
-    const { _id } = req.params;  // Extract the id from the params
-    const { name, desc, discount, packs } = req.body;
+    const { _id } = req.params;  
+    const { name, desc, packs} = req.body;
 
     // Parse packs if it is a string
     let parsedPacks;
@@ -159,7 +160,7 @@ const updateProduct = async (req, res) => {
       parsedPacks = packs;
     }
 
-    let updateData = { name, desc, discount, packs: parsedPacks };
+    let updateData = { name, desc,packs: parsedPacks, };
 
     // If a new image file is uploaded
     if (req.file) {
@@ -257,4 +258,69 @@ const deleteproduct = async (req, res) => {
 };
 
 
-module.exports = { addproducts, viewproducts, updateProduct, deleteproduct, singleproduct,upload };
+const updatestock = async(req,res)=>{
+  const { productId, packIndex, quantity } = req.body;
+
+  if (!productId || packIndex === undefined || !quantity) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Start a session for the transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Find the product and select for update (locks the document)
+    const selectedProduct = await product.findOne({ _id: productId }).session(session);
+
+    if (!selectedProduct) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (!selectedProduct.packs[packIndex]) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: 'Invalid pack index' });
+    }
+
+    // Check if there's enough stock
+    if (selectedProduct.packs[packIndex].inventory < quantity) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: 'Not enough stock' });
+    }
+
+    // Update the stock
+    selectedProduct.packs[packIndex].inventory -= quantity;
+
+    // Save the updated product
+    await selectedProduct.save({ session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+
+    res.json({ 
+      message: 'Stock updated successfully', 
+      updatedStock: selectedProduct.packs[packIndex].inventory,
+      productName: selectedProduct.name,
+      packDetails: {
+        ml: selectedProduct.packs[packIndex].ml,
+        unit: selectedProduct.packs[packIndex].unit,
+        price: selectedProduct.packs[packIndex].price,
+        discount: selectedProduct.packs[packIndex].discount
+      }
+    });
+  } catch (error) {
+    // If an error occurred, abort the transaction
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    console.error('Error updating stock:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    // End the session
+    session.endSession();
+  }
+};
+
+
+module.exports = { addproducts, viewproducts, updateProduct, deleteproduct, singleproduct,updatestock,upload };

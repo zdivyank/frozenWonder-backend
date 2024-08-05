@@ -46,4 +46,58 @@ const deleteorder = async (req, res) => {
   }
 };
 
-module.exports = { addorder, vieworder,deleteorder };
+const allPincode = async (req,res)=>{
+    // const {pincode} = req.body;
+  try {
+    const response = await order.find().distinct("pincode");
+    
+    if (!response) {
+      res.status(500).json({message:'Invalid Pincode'})
+    }
+
+    return res.status(200).json({response})
+  } catch (error) {
+    console.log(error);
+    
+    res.status(500).json({message:'Failed to fetch'})
+
+  }
+}
+const loactionWiseOrder = async (req,res)=>{
+    const {pincode} = req.body;
+  try {
+    const response = await order.find({pincode});
+    
+    if (!response) {
+      res.status(500).json({message:'Invalid Pincode'})
+    }
+
+    return res.status(200).json({response,message:'Fetched'})
+  } catch (error) {
+    console.log(error);
+    
+    res.status(500).json({message:'Invalid Location'})
+
+  }
+}
+
+const updateStatus = async (req,res)=>{
+    const {_id} = req.params;
+    const {status} = req.body;
+  try {
+    const response = await order.findByIdAndUpdate(_id ,{ status: status },{ new: true } );
+    
+    if (!response) {
+      res.status(400).json({message:'Invalid Status'})
+    }
+
+    return res.status(200).json({ message: 'Status updated successfully', Order: response });
+ 
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:'Invalid Status Found'})
+
+  }
+}
+
+module.exports = { addorder, vieworder,deleteorder ,loactionWiseOrder,allPincode,updateStatus};
