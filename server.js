@@ -7,13 +7,18 @@ const productRoute = require('./routers/product_routes')
 const orderRoute = require('./routers/order_routers')
 const userRoute = require('./routers/user_routers')
 const otpRoute = require('./routers/otp_routers')
+const tesimonailRoute = require('./routers/tesimonails_routers')
 const path = require('path');
+const bodyParser = require('body-parser');
+
 
 // app.use(cors({
 //   origin: ['http://localhost:5173','https://frozenwonder-frontend.onrender.com','https://frozenwonders.netlify.app/']
 // }));
 
 app.use(cors());
+app.use(bodyParser.json());
+
 
 app.use(express.json());
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -24,6 +29,7 @@ app.use('/',userRoute);
 app.use('/',otpRoute);
 app.use('/',productRoute);
 app.use('/',orderRoute);
+app.use('/',tesimonailRoute);
 // app.use("/api/blog", blogRouter);
 
 
