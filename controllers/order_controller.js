@@ -211,6 +211,28 @@ const isAlreadyuser = async(req,res)=>{
   }
 }
 
+const deleteAdress = async(req,res)=>{
+  const { cust_number, addressIndex } = req.body;
+  
+  try {
+    const customer = await order.findOne({ cust_number });
+    
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+    
+    customer.cust_addresses.splice(addressIndex, 1); // Remove the address at the specified index
+    await customer.save();
+    
+    res.status(200).json({ message: 'Address deleted successfully' });
+  } 
+  catch (error) {
+    console.error('Error deleting address:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  
+};
+}
+
 
 module.exports = { 
   addorder, 
@@ -223,5 +245,6 @@ module.exports = {
   fetchBlockedDates,
   unblockDate,
   fetchFullday,
-  isAlreadyuser
+  isAlreadyuser,
+  deleteAdress
 };

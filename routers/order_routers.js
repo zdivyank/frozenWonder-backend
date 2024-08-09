@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addorder, vieworder,deleteorder, locationWiseOrder,allPincode,updateStatus,blockDate, fetchBlockedDates, unblockDate,fetchFullday, isAlreadyuser } = require('../controllers/order_controller');
+const { addorder, vieworder,deleteorder, locationWiseOrder,allPincode,updateStatus,blockDate, fetchBlockedDates, unblockDate,fetchFullday, isAlreadyuser, deleteAdress } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
 router.route("/vieworders").get(vieworder);
@@ -19,4 +19,5 @@ router.get('/fullday', fetchFullday);
 
 router.post('/isAlreadyuser',isAlreadyuser);
 
+router.delete('/delete-address',deleteAdress);
 module.exports = router;
