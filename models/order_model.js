@@ -14,12 +14,10 @@ const orderSchema = new Schema({
     type: String,
     required: true
   },
-  
-pincode: {
+  pincode: {
     type: String,
     required: true
   },
-
   order_product: [
     {
       name: { type: String, required: true },
@@ -31,6 +29,17 @@ pincode: {
     type: Date,
     required: true
   },
+  timeslot: {
+    type: String,
+    enum: ['morning', 'evening'],
+    required: true
+  },
+  blocked_dates: [
+    {
+      date: { type: Date, required: true },
+      timeslot: { type: String, enum: ['morning', 'evening', 'fullday'] }
+    }
+  ],
   status: {
     type: String,
     required: true

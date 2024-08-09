@@ -20,7 +20,8 @@ const register = async (req, res) => {
         var salt = bcrypt.genSaltSync(10);
         var hash_Password = await bcrypt.hash(password, salt);
         // await user.create({username ,email,phone ,password})
-        const newUser = await user.create({ username, email, phone, password: hash_Password,role:"owner" });
+        const newUser = await user.create({ username, email, phone, password: hash_Password,role });
+        console.log(newUser);
         return res.status(200)
             .json({
                 // msg : newUser ,
@@ -28,7 +29,6 @@ const register = async (req, res) => {
                 token: await newUser.genrateToken(),
                 userId: newUser._id.toString()
             })
-        console.log(newUser);
     }
     catch (error) {
         console.log(error);
