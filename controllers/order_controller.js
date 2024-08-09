@@ -197,6 +197,20 @@ const fetchFullday = async (req, res) => {
   }
 };
 
+const isAlreadyuser = async(req,res)=>{
+
+  const {cust_number} = req.body;
+  try {
+    const response = await order.find({cust_number});
+    console.log(response);
+    res.status(200).json({response})
+    
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
 
 module.exports = { 
   addorder, 
@@ -208,5 +222,6 @@ module.exports = {
   blockDate,
   fetchBlockedDates,
   unblockDate,
-  fetchFullday
+  fetchFullday,
+  isAlreadyuser
 };

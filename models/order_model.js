@@ -6,10 +6,10 @@ const orderSchema = new Schema({
     type: String,
     required: true
   },
-  cust_address: {
+  cust_addresses: [{
     type: String,
     required: true
-  },
+  }],
   cust_number: {
     type: String,
     required: true
@@ -34,12 +34,6 @@ const orderSchema = new Schema({
     enum: ['morning', 'evening'],
     required: true
   },
-  blocked_dates: [
-    {
-      date: { type: Date, required: true },
-      timeslot: { type: String, enum: ['morning', 'evening', 'fullday'] }
-    }
-  ],
   status: {
     type: String,
     required: true
