@@ -9,7 +9,7 @@ const orderSchema = new mongoose.Schema({
   cust_name: { type: String, required: true },
   cust_number: { type: String, required: true },
   cust_addresses: [addressSchema],
-  selected_address: { type: Number, required: true }, // Index of selected address
+  selected_address: { type: Number, required: true },
   pincode: { type: String, required: true },
   order_date: { type: Date, required: true },
   timeslot: { type: String, required: true },
@@ -20,6 +20,14 @@ const orderSchema = new mongoose.Schema({
   }],
   status: { type: String, default: 'Pending' },
   total_amount: { type: Number, required: true }
+});
+
+// Add blocked_dates field to the schema
+orderSchema.add({
+  blocked_dates: [{
+    date: { type: Date, required: true },
+    timeslot: { type: String, required: true }
+  }]
 });
 
 module.exports = mongoose.model('orders', orderSchema);
