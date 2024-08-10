@@ -12,7 +12,8 @@ const {
   unblockDate,
   fetchFullday, 
   isAlreadyuser, 
-  deleteAdress 
+  deleteAdress, 
+  addaddress
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -27,5 +28,6 @@ router.route("/blocked-dates").get(fetchBlockedDates);
 router.route("/fullday").get(fetchFullday);
 router.route("/isAlreadyuser").post(isAlreadyuser);
 router.route("/delete-address").delete(deleteAdress);
+router.post('/addAddress',addaddress )
 
 module.exports = router;

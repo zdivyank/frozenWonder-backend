@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const addorder = async (req, res) => {
   try {
-    const { order_date, timeslot } = req.body;
+    const { order_date, timeslot, selected_address } = req.body;
     const formattedOrderDate = moment(order_date).format('YYYY-MM-DD');
 
     const blocked = await Order.findOne({
@@ -32,7 +32,8 @@ const addorder = async (req, res) => {
 
     const newOrder = new Order({
       ...req.body,
-      order_date: new Date(formattedOrderDate)
+      order_date: new Date(formattedOrderDate),
+      selected_address: selected_address // Make sure this is the index of the selected address
     });
     await newOrder.save();
     return res.status(200).json({ message: 'Order placed successfully', order: newOrder });
@@ -41,6 +42,7 @@ const addorder = async (req, res) => {
     return res.status(500).json({ message: 'Failed to place order' });
   }
 };
+
 
 const vieworder = async (req, res) => {
   try {
@@ -224,7 +226,25 @@ const isAlreadyuser = async (req, res) => {
     res.status(500).json({ message: 'An error occurred while checking user existence.' });
   }
 };
+const addaddress = async (req, res) => {
+  try {
+    const { cust_number, address, label } = req.body;
 
+    const customer = await Order.findOne({ cust_number });
+
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    customer.cust_addresses.push({ address, label });
+    await customer.save();
+
+    res.status(200).json(customer);
+  } catch (error) {
+    console.error('Error adding address:', error);
+    res.status(500).json({ message: 'Failed to add address' });
+  }
+};
 const deleteAdress = async (req, res) => {
   const { cust_number, addressIndex } = req.body;
 
@@ -233,6 +253,10 @@ const deleteAdress = async (req, res) => {
 
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    if (addressIndex < 0 || addressIndex >= customer.cust_addresses.length) {
+      return res.status(400).json({ message: 'Invalid address index' });
     }
 
     customer.cust_addresses.splice(addressIndex, 1);
@@ -244,6 +268,7 @@ const deleteAdress = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 module.exports = {
   addorder,
@@ -257,5 +282,6 @@ module.exports = {
   unblockDate,
   fetchFullday,
   isAlreadyuser,
-  deleteAdress
+  deleteAdress,
+  addaddress
 };
