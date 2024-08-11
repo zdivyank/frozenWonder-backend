@@ -1,11 +1,80 @@
 const Order = require('../models/order_model');
+const Agency = require('../models/agency_model');
 const moment = require('moment');
 const mongoose = require('mongoose');
+const opencage = require('opencage-api-client');
+
+async function geocodeAddress(address) {
+  try {
+    if (!process.env.OPENCAGE_API_KEY) {
+      throw new Error('OPENCAGE_API_KEY is not defined in environment variables');
+    }
+
+    console.log('Requesting geocode for:', address);
+
+    const response = await opencage.geocode({ q: address, key: process.env.OPENCAGE_API_KEY });
+
+    if (response.status.code !== 200) {
+      console.error('Error response from OpenCage:', response);
+      return null;
+    }
+
+    if (response.results.length > 0) {
+      const { lat, lng } = response.results[0].geometry;
+      return { lat, lng };
+    } else {
+      console.error('No results found for address:', address);
+    }
+  } catch (error) {
+    console.error('Error geocoding address:', error);
+  }
+  return null;
+}
+
+async function findNearestDistributor(customerCoords, distributors) {
+  let nearestDistributor = null;
+  let shortestDistance = Infinity;
+
+  for (const distributor of distributors) {
+    const distributorCoords = await geocodeAddress(distributor.address);
+    if (distributorCoords) {
+      const distance = getDistanceFromLatLonInKm(
+        customerCoords.lat, customerCoords.lng,
+        distributorCoords.lat, distributorCoords.lng
+      );
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestDistributor = distributor;
+      }
+    }
+  }
+
+  return nearestDistributor;
+}
 
 const addorder = async (req, res) => {
   try {
-    const { order_date, timeslot, selected_address } = req.body;
+    const { order_date, timeslot, selected_address, cust_address } = req.body;
     const formattedOrderDate = moment(order_date).format('YYYY-MM-DD');
+
+    const addressIndex = parseInt(selected_address, 10) - 1;
+    if (addressIndex < 0 || addressIndex >= cust_address.length) {
+      return res.status(400).json({ message: 'Invalid selected address index' });
+    }
+    const addressToGeocode = cust_address[addressIndex];
+
+    const customerCoords = await geocodeAddress(addressToGeocode);
+
+    if (!customerCoords) {
+      return res.status(400).json({ message: 'Failed to geocode customer address' });
+    }
+
+    const distributors = await Agency.find({}); // Changed from agency to Agency
+    const nearestAgency = await findNearestDistributor(customerCoords, distributors);
+
+    if (!nearestAgency) {
+      return res.status(400).json({ message: 'No nearby distributor found' });
+    }
 
     const blocked = await Order.findOne({
       blocked_dates: {
@@ -20,12 +89,12 @@ const addorder = async (req, res) => {
     });
 
     if (blocked) {
-      return res.status(400).json({ message: 'This date and timeslot are not available for Delivery.' });
+      return res.status(400).json({ message: 'This date and timeslot are not available for delivery.' });
     }
 
     const now = moment();
     const orderDateTime = moment(formattedOrderDate + ' ' + (timeslot === 'morning' ? '08:00' : '16:00'), 'YYYY-MM-DD HH:mm');
-    
+
     if (orderDateTime.diff(now, 'hours') < 12) {
       return res.status(400).json({ message: 'Orders must be placed at least 12 hours in advance.' });
     }
@@ -33,20 +102,40 @@ const addorder = async (req, res) => {
     const newOrder = new Order({
       ...req.body,
       order_date: new Date(formattedOrderDate),
-      selected_address: selected_address // Make sure this is the index of the selected address
+      selected_address: addressToGeocode,
+      agency_id: nearestAgency._id
     });
+
     await newOrder.save();
     return res.status(200).json({ message: 'Order placed successfully', order: newOrder });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: 'Failed to place order' });
+    console.error(error);
+    return res.status(500).json({ message: 'Failed to place order', error: error.message });
   }
 };
+
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c;
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+
 
 
 const vieworder = async (req, res) => {
   try {
-    const response = await Order.find();
+    const response = await Order.find().populate('agency_id','agency_name');
     if (response.length === 0) {
       return res.status(404).json({ message: 'No Orders Found' });
     }

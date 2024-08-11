@@ -64,6 +64,32 @@ const get_agency = async (req, res) => {
     res.status(400).json({ "message": error.message });
   }
 };
+const get_Eachagency = async (req, res) => {
+  const {_id} = req.params;
+  try {
+    const response = await agency.find({_id});
+    res.status(200).json({ "message": response });
+  } catch (error) {
+    res.status(400).json({ "message": error.message });
+  }
+};
+
+const edit_agency = async (req, res) => {
+  const {_id} = req.params;
+  const { agency_name,owner,mobile_number,email,gstno,address} = req.body;
+
+  let updateData = { agency_name,owner,mobile_number,email,gstno,address };
+
+  try {
+    const response = await agency.findByIdAndUpdate(_id, updateData,{ new: true } );
+    res.status(200).json({ "message": response });
+  } catch (error) {
+    res.status(400).json({ "message": error.message });
+  }
+};
+
+
+
 const remove_agency = async (req, res) => {
 
     const {_id} = req.params;
@@ -76,4 +102,4 @@ const remove_agency = async (req, res) => {
 };
 
 
-module.exports = {add_agency, get_agency,remove_agency, upload};
+module.exports = {add_agency, get_agency,remove_agency, get_Eachagency,edit_agency,upload};
