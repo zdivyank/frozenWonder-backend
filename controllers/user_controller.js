@@ -5,10 +5,10 @@
 
     const register = async (req, res) => {
         try {
-            const { username, email, phone, password, role, agency_id, user_type } = req.body;
+            const { username, email, phone, password, role, agency_id } = req.body;
     
             // Log the received data to check if it's coming correctly
-            console.log("Register data:", { username, email, phone, role, agency_id, user_type });
+            console.log("Register data:", { username, email, phone, role, agency_id  });
     
             // Validate ObjectIds
             if (!mongoose.Types.ObjectId.isValid(role) || !mongoose.Types.ObjectId.isValid(agency_id)) {
@@ -33,7 +33,7 @@
                 password: hash_Password,
                 role,
                 agency_id,
-                user_type
+                
             });
     
             console.log("New user before save:", newUser);
@@ -100,4 +100,19 @@
         }
     }
 
-    module.exports = { register, login, users };
+    const allUser = async(req,res)=>{
+        try {
+                const response = await user.find();
+                console.log(response);
+
+                return res.status(200).json({response})
+                
+
+        } catch (error) {
+            console.log(error);
+            
+            res.status(500).json({"message":error})
+        }
+    }
+
+    module.exports = { register, login, users ,allUser};

@@ -31,11 +31,11 @@ const userSchema = new mongoose.Schema({
         ref: 'agencies', 
         required: true,
     },
-    user_type: {
-        type: String,
-        required: true,
-        enum: ["Admin", "Agency", "Delivery_person"], 
-    },
+    // user_type: {
+    //     type: String,
+    //     required: true,
+    //     enum: ["Admin", "Agency", "Delivery_person"], 
+    // },
     createdAt: {
         type: Date,
         default: Date.now,
