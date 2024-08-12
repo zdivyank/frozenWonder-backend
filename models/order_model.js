@@ -8,7 +8,8 @@ const addressSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
   cust_name: { type: String, required: true },
   cust_number: { type: String, required: true },
-  cust_addresses: [addressSchema],
+  // cust_address: [addressSchema],
+  cust_address: [{ type: String, required: true }], 
   selected_address: { type: String, required: true },
   pincode: { type: String, required: true },
   order_date: { type: Date, required: true },
