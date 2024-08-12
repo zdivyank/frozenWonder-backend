@@ -62,6 +62,7 @@ const addorder = async (req, res) => {
       return res.status(400).json({ message: 'Invalid selected address index' });
     }
     const addressToGeocode = cust_address[addressIndex];
+console.log("::::::",addressToGeocode);
 
     const customerCoords = await geocodeAddress(addressToGeocode);
 
@@ -69,7 +70,7 @@ const addorder = async (req, res) => {
       return res.status(400).json({ message: 'Failed to geocode customer address' });
     }
 
-    const distributors = await Agency.find({}); // Changed from agency to Agency
+    const distributors = await Agency.find({});
     const nearestAgency = await findNearestDistributor(customerCoords, distributors);
 
     if (!nearestAgency) {
