@@ -32,10 +32,10 @@ router.route("/isAlreadyuser").post(isAlreadyuser);
 router.route("/delete-address").delete(deleteAdress);
 router.post('/addAddress',addaddress )
 // router.post('/fetchagencyorder',fetchagencyorder )
-// router.post('/fetchagencyorder', fetchagencyorder); 
+router.post('/fetchagencyorder', fetchagencyorder); 
 
 
-// router.post('/assign-orders', assignOrdersToDeliveryBoys);
+router.post('/assign-orders', assignOrdersToDeliveryBoys);
 
 
 module.exports = router;
