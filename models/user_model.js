@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Define the user schema
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -31,11 +30,6 @@ const userSchema = new mongoose.Schema({
         ref: 'agencies', 
         required: true,
     },
-    // user_type: {
-    //     type: String,
-    //     required: true,
-    //     enum: ["Admin", "Agency", "Delivery_person"], 
-    // },
     createdAt: {
         type: Date,
         default: Date.now,

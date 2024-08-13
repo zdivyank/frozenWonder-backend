@@ -1,10 +1,12 @@
 const agency = require('../models/agency_model');
+const User = require('../models/user_model');
 
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 let streamifier = require('streamifier');
 const cloudinary = require('cloudinary');
+const role = require('../models/role_model');
 
 
 
@@ -101,5 +103,35 @@ const remove_agency = async (req, res) => {
   }
 };
 
+// const getDeliveryPersonsByAgency = async (req, res) => {
+//   try {
+//       const { agency_id } = req.params;
+
+//       if (!agency_id) {
+//           return res.status(400).json({ message: 'Agency ID is required' });
+//       }
+
+     
+//       const deliveryPersonRole = await role.findOne({ name: 'Delivery_person' }); 
+
+//       if (!deliveryPersonRole) {
+//           return res.status(404).json({ message: 'Role for delivery person not found' });
+//       }
+
+//       const deliveryPersons = await User.find({ 
+//           agency_id: agency_id, 
+//           role: deliveryPersonRole._id 
+//       }).populate('role', 'name'); // Populate role if needed
+
+//       if (deliveryPersons.length === 0) {
+//           return res.status(404).json({ message: 'No delivery persons found for this agency' });
+//       }
+
+//       return res.status(200).json({ deliveryPersons });
+//   } catch (error) {
+//       console.error('Error fetching delivery persons:', error);
+//       return res.status(500).json({ message: 'Server error' });
+//   }
+// };
 
 module.exports = {add_agency, get_agency,remove_agency, get_Eachagency,edit_agency,upload};

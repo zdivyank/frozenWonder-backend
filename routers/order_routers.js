@@ -13,7 +13,8 @@ const {
   fetchFullday, 
   isAlreadyuser, 
   deleteAdress, 
-  addaddress
+  addaddress,
+  fetchagencyorder
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -29,5 +30,7 @@ router.route("/fullday").get(fetchFullday);
 router.route("/isAlreadyuser").post(isAlreadyuser);
 router.route("/delete-address").delete(deleteAdress);
 router.post('/addAddress',addaddress )
+// router.post('/fetchagencyorder',fetchagencyorder )
+router.post('/fetchagencyorder', fetchagencyorder); 
 
 module.exports = router;

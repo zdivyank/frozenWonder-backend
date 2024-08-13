@@ -7,4 +7,5 @@ router.get('/getagency',get_agency);
 router.delete('/removeagency/:_id',remove_agency);
 router.put('/editagency/:_id',edit_agency);
 router.post('/eachagency/:_id',get_Eachagency);
+// router.get('/deliverypersons/:agency_id',getDeliveryPersonsByAgency);
 module.exports = router;

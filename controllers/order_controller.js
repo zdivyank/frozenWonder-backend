@@ -392,6 +392,20 @@
       res.status(500).json({ message: 'Internal Server Error' });
     }
   };
+
+  const fetchagencyorder = async (req, res) => {
+    try {
+      const { _id } = req.body;
+  
+      const response = await Order.find({ agency_id: _id }); // Adjust query if needed
+  
+      return res.status(200).json({ response });
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  };
+  
   
 
 
@@ -408,5 +422,6 @@
     fetchFullday,
     isAlreadyuser,
     deleteAdress,
-    addaddress
+    addaddress,
+    fetchagencyorder
   };

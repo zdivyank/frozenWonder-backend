@@ -102,7 +102,7 @@
 
     const allUser = async(req,res)=>{
         try {
-                const response = await user.find();
+                const response = await user.find().populate('role','name');
                 console.log(response);
 
                 return res.status(200).json({response})
@@ -115,4 +115,24 @@
         }
     }
 
-    module.exports = { register, login, users ,allUser};
+
+    const fetch_role = async (req, res) => {
+        try {
+            const { _id } = req.body;
+    
+            const userWithRole = await user.findById(_id).populate('role', 'name');
+    
+            if (!userWithRole) {
+                return res.status(404).json({ message: "User not found" });
+            }
+    
+            console.log(userWithRole.role.name);
+    
+            return res.status(200).json({ role: userWithRole.role.name });
+        } catch (error) {
+            console.log('Error fetching current user details:', error);
+            return res.status(500).json({ message: "Server error" });
+        }
+    };
+    
+    module.exports = { register, login, users ,allUser,fetch_role};

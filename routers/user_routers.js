@@ -13,4 +13,5 @@ router.route('/user').get( authMiddleware, authControllers.users);
 
 router.route('/alluser').get(  authControllers.allUser);
 
+router.route('/fetchrole').post(  authControllers.fetch_role);
 module.exports = router;
