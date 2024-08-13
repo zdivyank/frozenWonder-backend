@@ -61,45 +61,24 @@
 }
 
   
-  const addorder = async (req, res) => {
-    try {
-      const {
-        cust_name,
-        cust_address,
-        selected_address,
-        cust_number,
-        pincode,
-        order_product,
-        total_amount,
-        order_date,
-        timeslot
-      } = req.body;
-  
-      // Validate cust_address as an array of strings
-      if (!Array.isArray(cust_address) || !cust_address.every(addr => typeof addr === 'string')) {
-        return res.status(400).json({ message: 'Invalid address format' });
-      }
-  
-      // Validate selected_address as a valid index
-      const addressIndex = parseInt(selected_address, 10);
-      if (isNaN(addressIndex) || addressIndex < 0 || addressIndex >= cust_address.length) {
-        return res.status(400).json({ message: 'Invalid selected address index' });
-      }
-  
-      const addressToGeocode = cust_address[addressIndex];
-    console.log("Selected address:", addressToGeocode);
-  
-      // Geocode and find nearest distributorQ
-      let customerCoords;
-      try {
-        customerCoords = await geocodeAddress(addressToGeocode);
-        if (!customerCoords) {
-          return res.status(400).json({ message: 'Failed to geocode customer address. Please check the address and try again.' });
-        }
-      } catch (geocodeError) {
-        console.error('Geocoding error:', geocodeError);
-        return res.status(500).json({ message: 'An error occurred while processing the address. Please try again later.' });
-      }
+const addorder = async (req, res) => {
+  try {
+    const { order_date, timeslot, selected_address, cust_address } = req.body;
+    const formattedOrderDate = moment(order_date).format('YYYY-MM-DD');
+
+    const addressIndex = parseInt(selected_address, 10) - 1;
+    if (addressIndex < 0 || addressIndex >= cust_address.length) {
+      return res.status(400).json({ message: 'Invalid selected address index' });
+    }
+    const addressToGeocode = cust_address[addressIndex];
+console.log("::::::",addressToGeocode);
+
+    const customerCoords = await geocodeAddress(addressToGeocode);
+
+    if (!customerCoords) {
+      return res.status(400).json({ message: 'Failed to geocode customer address' });
+    }
+
   
       const distributors = await Agency.find({});
       const nearestAgency = await findNearestDistributor(customerCoords, distributors);
