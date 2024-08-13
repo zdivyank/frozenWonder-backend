@@ -331,13 +331,19 @@
   const isAlreadyuser = async (req, res) => {
     const { cust_number } = req.body;
     try {
-      const response = await Order.find({ cust_number });
+      // Find the most recent order for the given customer number
+      const response = await Order.find({ cust_number })
+        .sort({ order_date: -1 }) // Assuming 'order_date' is the field representing the order date
+        .limit(1); // Limit to the most recent order
+  
       res.status(200).json({ response });
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: 'An error occurred while checking user existence.' });
     }
   };
+  
+
   const addaddress = async (req, res) => {
     try {
       const { cust_number, address, label } = req.body;
@@ -358,28 +364,35 @@
     }
   };
   const deleteAdress = async (req, res) => {
-    const { cust_number, addressIndex } = req.body;
-
+    // const { cust_number, addressIndex } = req.body;
     try {
-      const customer = await Order.findOne({ cust_number });
-
-      if (!customer) {
-        return res.status(404).json({ message: 'Customer not found' });
+      const { cust_number, selected_address } = req.body;
+  
+      // Find the order by customer number
+      const order = await Order.findOne({ cust_number });
+  
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
       }
-
-      if (addressIndex < 0 || addressIndex >= customer.cust_addresses.length) {
+  
+      // Ensure the index is valid
+      if (selected_address < 0 || selected_address >= order.cust_address.length) {
         return res.status(400).json({ message: 'Invalid address index' });
       }
-
-      customer.cust_addresses.splice(addressIndex, 1);
-      await customer.save();
-
-      res.status(200).json({ message: 'Address deleted successfully' });
+  
+      // Remove the address at the given index
+      order.cust_address.splice(selected_address, 1);
+  
+      // Save the updated order
+      await order.save();
+  
+      res.status(200).json({ message: 'Address removed successfully' });
     } catch (error) {
-      console.error('Error deleting address:', error);
+      console.error('Error in DELETE /delete-address:', error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   };
+  
 
 
   module.exports = {
