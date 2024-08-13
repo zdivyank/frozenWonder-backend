@@ -63,8 +63,18 @@
   
 const addorder = async (req, res) => {
   try {
-    const { order_date, timeslot, selected_address, cust_address } = req.body;
-    const formattedOrderDate = moment(order_date).format('YYYY-MM-DD');
+    const {
+      cust_name,
+      cust_number,
+      pincode,
+      order_date,
+      timeslot,
+      selected_address,
+      cust_address,
+      order_product, // Assuming order_product is an array or an object
+      total_amount,  // Assuming total_amount is a number
+    } = req.body;
+     const formattedOrderDate = moment(order_date).format('YYYY-MM-DD');
 
     const addressIndex = parseInt(selected_address, 10) - 1;
     if (addressIndex < 0 || addressIndex >= cust_address.length) {
