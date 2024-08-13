@@ -1,56 +1,65 @@
   const Order = require('../models/order_model');
+  const User = require('../models/user_model');
   const Agency = require('../models/agency_model');
   const moment = require('moment');
   const mongoose = require('mongoose');
   const opencage = require('opencage-api-client');
 
-  async function geocodeAddress(address) {
-    try {
-      if (!process.env.OPENCAGE_API_KEY) {
-        throw new Error('OPENCAGE_API_KEY is not defined in environment variables');
+  async function geocodeAddress(address, retries = 3) {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        if (!process.env.OPENCAGE_API_KEY) {
+          throw new Error('OPENCAGE_API_KEY is not defined in environment variables');
+        }
+  
+        console.log(`Requesting geocode for: ${address} (Attempt ${attempt + 1})`);
+  
+        const response = await opencage.geocode({ q: address, key: process.env.OPENCAGE_API_KEY });
+  
+        if (response.status.code !== 200) {
+          console.error('Error response from OpenCage:', response);
+          continue; // Try again
+        }
+  
+        if (response.results.length > 0) {
+          const { lat, lng } = response.results[0].geometry;
+          return { lat, lng };
+        } else {
+          console.error('No results found for address:', address);
+        }
+      } catch (error) {
+        console.error(`Error geocoding address (Attempt ${attempt + 1}):`, error);
+        if (attempt === retries - 1) throw error; // Throw on last attempt
       }
-
-      console.log('Requesting geocode for:', address);
-
-      const response = await opencage.geocode({ q: address, key: process.env.OPENCAGE_API_KEY });
-
-      if (response.status.code !== 200) {
-        console.error('Error response from OpenCage:', response);
-        return null;
-      }
-
-      if (response.results.length > 0) {
-        const { lat, lng } = response.results[0].geometry;
-        return { lat, lng };
-      } else {
-        console.error('No results found for address:', address);
-      }
-    } catch (error) {
-      console.error('Error geocoding address:', error);
     }
     return null;
-  }
-
-  async function findNearestDistributor(customerCoords, distributors) {
+  }async function findNearestDistributor(customerCoords, distributors) {
     let nearestDistributor = null;
     let shortestDistance = Infinity;
 
     for (const distributor of distributors) {
-      const distributorCoords = await geocodeAddress(distributor.address);
-      if (distributorCoords) {
-        const distance = getDistanceFromLatLonInKm(
-          customerCoords.lat, customerCoords.lng,
-          distributorCoords.lat, distributorCoords.lng
-        );
-        if (distance < shortestDistance) {
-          shortestDistance = distance;
-          nearestDistributor = distributor;
+        try {
+            const distributorCoords = await geocodeAddress(distributor.address);
+            if (distributorCoords) {
+                const distance = getDistanceFromLatLonInKm(
+                    customerCoords.lat, customerCoords.lng,
+                    distributorCoords.lat, distributorCoords.lng
+                );
+                if (distance < shortestDistance) {
+                    shortestDistance = distance;
+                    nearestDistributor = distributor;
+                }
+            }
+        } catch (e) {
+            console.error('Error geocoding address:', e);
+            // Continue with the next distributor if there's an error
+            continue;
         }
-      }
     }
 
     return nearestDistributor;
-  }
+}
+
   
   const addorder = async (req, res) => {
     try {
@@ -78,19 +87,25 @@
       }
   
       const addressToGeocode = cust_address[addressIndex];
-      console.log("Selected address:", addressToGeocode);
+    console.log("Selected address:", addressToGeocode);
   
       // Geocode and find nearest distributorQ
-      const customerCoords = await geocodeAddress(addressToGeocode);
-      if (!customerCoords) {
-        return res.status(400).json({ message: 'Failed to geocode customer address' });
+      let customerCoords;
+      try {
+        customerCoords = await geocodeAddress(addressToGeocode);
+        if (!customerCoords) {
+          return res.status(400).json({ message: 'Failed to geocode customer address. Please check the address and try again.' });
+        }
+      } catch (geocodeError) {
+        console.error('Geocoding error:', geocodeError);
+        return res.status(500).json({ message: 'An error occurred while processing the address. Please try again later.' });
       }
   
       const distributors = await Agency.find({});
       const nearestAgency = await findNearestDistributor(customerCoords, distributors);
   
       if (!nearestAgency) {
-        return res.status(400).json({ message: 'No nearby distributor found' });
+        return res.status(400).json({ message: 'No nearby distributor found. We may not be able to serve this area.' });
       }
   
       const blocked = await Order.findOne({
@@ -406,6 +421,12 @@
     }
   };
   
+
+  const assignOrdersToDeliveryBoys = async (req, res) => {
+    
+
+};
+
   
 
 
@@ -423,5 +444,6 @@
     isAlreadyuser,
     deleteAdress,
     addaddress,
-    fetchagencyorder
+    fetchagencyorder,
+    assignOrdersToDeliveryBoys
   };

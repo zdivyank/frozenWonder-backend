@@ -25,7 +25,12 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'agencies', 
     required: false
-}
+}, assigned_delivery_boys: [
+  {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'users',
+  }
+],
 });
 
 // Add blocked_dates field to the schema
