@@ -37,5 +37,4 @@ router.post('/fetchagencyorder', fetchagencyorder);
 
 router.post('/assign-orders', assignOrdersToDeliveryBoys);
 
-
 module.exports = router;
