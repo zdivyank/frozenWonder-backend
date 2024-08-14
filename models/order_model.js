@@ -2,14 +2,14 @@ const mongoose = require('mongoose');
 
 const addressSchema = new mongoose.Schema({
   address: { type: String, required: true },
-  label: { type: String}
+  label: { type: String }
 });
 
 const orderSchema = new mongoose.Schema({
   cust_name: { type: String, required: true },
   cust_number: { type: String, required: true },
   // cust_address: [addressSchema],
-  cust_address: [{ type: String, required: true }], 
+  cust_address: [{ type: String, required: true }],
   // selected_address: { type: String, required: true },,
   selected_address: { type: Number, required: true },
   pincode: { type: String, required: true },
@@ -24,14 +24,20 @@ const orderSchema = new mongoose.Schema({
   total_amount: { type: Number, required: true },
   agency_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'agencies', 
+    ref: 'agencies',
     required: false
-}, assigned_delivery_boys: [
-  {
+  },
+  coupon_code: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'coupons',
+    default: null
+  },
+  assigned_delivery_boys: [
+    {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'users',
-  }
-],
+    }
+  ],
 });
 
 // Add blocked_dates field to the schema

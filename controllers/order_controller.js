@@ -5,6 +5,9 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const opencage = require('opencage-api-client');
 
+// const Order = require('../models/order_model');
+const Coupon = require('../models/coupon_model');
+
 async function geocodeAddress(address, retries = 3) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -60,7 +63,6 @@ async function geocodeAddress(address, retries = 3) {
   return nearestDistributor;
 }
 
-
 const addorder = async (req, res) => {
   try {
     const {
@@ -71,24 +73,52 @@ const addorder = async (req, res) => {
       timeslot,
       selected_address,
       cust_address,
-      order_product, // Assuming order_product is an array or an object
-      total_amount,  // Assuming total_amount is a number
+      order_product,
+      coupon_code, // This is the coupon code provided by the user
     } = req.body;
+
     const formattedOrderDate = moment(order_date).format('YYYY-MM-DD');
+
+    // Calculate the base total amount from the order products
+    let baseTotalAmount = 0;
+    order_product.forEach(product => {
+      baseTotalAmount += product.price * product.quantity;
+    });
+
+    // Find the coupon in the database
+    let coupon = null;
+    if (coupon_code) {
+      coupon = await Coupon.findOne({ code: coupon_code });
+
+      if (!coupon) {
+        return res.status(400).json({ message: 'Invalid coupon code' });
+      }
+
+      // Check if coupon usage limit is exceeded
+      if (coupon.usage_count >= coupon.usage_limit) {
+        return res.status(400).json({ message: 'Coupon code usage limit exceeded' });
+      }
+
+      // Apply discount from coupon
+      const discount = coupon.discount; // Assuming discount is a percentage
+      baseTotalAmount -= baseTotalAmount * (discount / 100);
+
+      // Update coupon usage count
+      coupon.usage_count += 1;
+      await coupon.save();
+    }
 
     const addressIndex = parseInt(selected_address, 10) - 1;
     if (addressIndex < 0 || addressIndex >= cust_address.length) {
       return res.status(400).json({ message: 'Invalid selected address index' });
     }
     const addressToGeocode = cust_address[addressIndex];
-    console.log("::::::", addressToGeocode);
 
     const customerCoords = await geocodeAddress(addressToGeocode);
 
     if (!customerCoords) {
       return res.status(400).json({ message: 'Failed to geocode customer address' });
     }
-
 
     const distributors = await Agency.find({});
     const nearestAgency = await findNearestDistributor(customerCoords, distributors);
@@ -127,21 +157,23 @@ const addorder = async (req, res) => {
       cust_number,
       pincode,
       order_product,
-      total_amount,
+      total_amount: baseTotalAmount, // Use the calculated total amount
       order_date: new Date(order_date),
       timeslot,
-      agency_id: nearestAgency._id
+      agency_id: nearestAgency._id,
+      coupon_code: coupon ? coupon._id : null, // Save the ObjectId of the coupon
     });
 
     await newOrder.save();
-
     await checkAndBlockDateAfter15Orders({ order_date, timeslot });
+
     return res.status(200).json({ message: 'Order placed successfully', order: newOrder });
   } catch (error) {
     console.error('Error in addorder:', error);
     return res.status(500).json({ message: 'Failed to place order', error: error.message });
   }
 };
+
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
