@@ -32,12 +32,11 @@ const orderSchema = new mongoose.Schema({
     ref: 'coupons',
     default: null
   },
-  assigned_delivery_boys: [
+  assigned_delivery_boys:
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'users',
+      type: Boolean,
+      default:"false"
     }
-  ],
 });
 
 // Add blocked_dates field to the schema

@@ -36,9 +36,16 @@ async function geocodeAddress(address, retries = 3) {
     }
   }
   return null;
-} async function findNearestDistributor(customerCoords, distributors) {
+} 
+
+async function findNearestDistributor(customerCoords, distributors) {
+  if (distributors.length === 1) {
+    return distributors[0]; // Return the only available distributor
+  }
+
   let nearestDistributor = null;
   let shortestDistance = Infinity;
+  const maxDistanceKm = 350; // Define a reasonable max distance for delivery
 
   for (const distributor of distributors) {
     try {
@@ -55,13 +62,17 @@ async function geocodeAddress(address, retries = 3) {
       }
     } catch (e) {
       console.error('Error geocoding address:', e);
-      // Continue with the next distributor if there's an error
       continue;
     }
   }
 
-  return nearestDistributor;
+  if (shortestDistance <= maxDistanceKm) {
+    return nearestDistributor;
+  } else {
+    return null; // Or return the closest distributor if distance isn’t a constraint
+  }
 }
+
 
 const addorder = async (req, res) => {
   try {
@@ -435,16 +446,62 @@ const fetchagencyorder = async (req, res) => {
   try {
     const { _id } = req.body;
 
-    const response = await Order.find({ agency_id: _id }); // Adjust query if needed
+    const response = await Order.find({ agency_id: _id });
 
     return res.status(200).json({ response });
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-};
+  };
 
+  
+  const fetchPendingagencyorder = async (req, res) => {
+    try {
+      const { _id } = req.params;
+  
+      console.log(_id);
+      
+      const orders = await Order.find({ 
+        agency_id: _id, 
+        assigned_delivery_boys: 'false' 
+      });
+  
+      console.log(orders);
+  
+      if (orders.length === 0) {
+        return res.status(404).json({ message: 'No pending orders found for this agency.' });
+      }
+  
+      res.status(200).json(orders);
+    } catch (error) {
+      console.error('Error fetching pending orders:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  };
+  
 
+  const updateAssignedorder = async (req,res) => {
+    try {
+      const { order_id } = req.body; 
+      // Update the orders to set assigned_delivery_boys to true
+      const result = await Order.updateMany(
+        { _id: { $in: order_id } },
+        { $set: { assigned_delivery_boys: true } }
+      );
+  
+      if (result.modifiedCount === 0) {
+        return res.status(404).json({ message: 'No orders were updated' });
+      }
+  
+      res.status(200).json({ message: 'Orders updated successfully' });
+    } catch (error) {
+      console.error('Error updating orders:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+ 
+  
 const assignOrdersToDeliveryBoys = async (req, res) => {
 
 
@@ -497,5 +554,7 @@ module.exports = {
   addaddress,
   fetchagencyorder,
   assignOrdersToDeliveryBoys,
-  checkAndBlockDateAfter15Orders
+  checkAndBlockDateAfter15Orders,
+  fetchPendingagencyorder,
+  updateAssignedorder
 };

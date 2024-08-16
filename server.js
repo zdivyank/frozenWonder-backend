@@ -11,6 +11,7 @@ const tesimonailRoute = require('./routers/tesimonails_routers')
 const roleRoute = require('./routers/role_routers')
 const agencyRoute = require('./routers/agency_routers')
 const couponRoute = require('./routers/coupon_routers')
+const deliveryRoute = require('./routers/delivery_routers')
 const path = require('path');
 const bodyParser = require('body-parser');
 
@@ -36,6 +37,7 @@ app.use('/',tesimonailRoute);
 app.use('/',roleRoute);
 app.use('/',agencyRoute);
 app.use('/',couponRoute);
+app.use('/',deliveryRoute);
 // app.use("/api/blog", blogRouter);
 
 

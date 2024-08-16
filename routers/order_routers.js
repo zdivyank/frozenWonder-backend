@@ -15,7 +15,9 @@ const {
   deleteAdress, 
   addaddress,
   fetchagencyorder,
-  assignOrdersToDeliveryBoys
+  assignOrdersToDeliveryBoys,
+  fetchPendingagencyorder,
+  updateAssignedorder
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -33,8 +35,10 @@ router.route("/delete-address").delete(deleteAdress);
 router.post('/addAddress',addaddress )
 // router.post('/fetchagencyorder',fetchagencyorder )
 router.post('/fetchagencyorder', fetchagencyorder); 
+router.get('/fetchpendingagencyorder/:_id',fetchPendingagencyorder); 
 
 
+router.post('/updateAssignedOrders', updateAssignedorder);
 router.post('/assign-orders', assignOrdersToDeliveryBoys);
 
 module.exports = router;

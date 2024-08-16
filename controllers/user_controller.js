@@ -31,8 +31,8 @@
                 email,
                 phone,
                 password: hash_Password,
-                role,
-                agency_id,
+                role: mongoose.Types.ObjectId(role), // Pass the role ObjectId
+                agency_id: mongoose.Types.ObjectId(agency_id) // Pass the agency ObjectId
                 
             });
     

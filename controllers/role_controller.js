@@ -32,4 +32,17 @@ const remove_role = async (req, res) => {
   }
 };
 
-module.exports = {add_role, get_role, remove_role};
+const edit_role = async (req,res) => {
+  const {_id} = req.params;
+  const name = req.body;
+  try {
+    const response = await role.findByIdAndUpdate(_id,name,{ new: true }  );
+    console.log(response);
+    
+    res.status(200).json({ "message": response });
+  } catch (error) {
+    res.status(400).json({ "message": error.message });
+  }
+}
+
+module.exports = {add_role, get_role, edit_role,remove_role};
