@@ -17,7 +17,8 @@ const {
   fetchagencyorder,
   assignOrdersToDeliveryBoys,
   fetchPendingagencyorder,
-  updateAssignedorder
+  updateAssignedorder,
+  getOrderDetails
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -41,4 +42,5 @@ router.get('/fetchpendingagencyorder/:_id',fetchPendingagencyorder);
 router.post('/updateAssignedOrders', updateAssignedorder);
 router.post('/assign-orders', assignOrdersToDeliveryBoys);
 
+router.get('/order/:orderId', getOrderDetails);
 module.exports = router;

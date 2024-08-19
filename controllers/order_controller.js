@@ -537,6 +537,23 @@ const checkAndBlockDateAfter15Orders = async ({ order_date }) => {
 };
 
 
+const getOrderDetails = async (req, res) => {
+  try {
+      const { orderId } = req.params;
+    
+      const order = await Order.findById(orderId);
+
+      if (!order) {
+          return res.status(404).json({ "Message": "Order not found" });
+      }
+
+      return res.status(200).json(order);
+  } catch (error) {
+      console.error('Error in getOrderDetails:', error);
+      return res.status(500).json({ "Message": "Internal server error" });
+  }
+};
+
 
 module.exports = {
   addorder,
@@ -556,5 +573,6 @@ module.exports = {
   assignOrdersToDeliveryBoys,
   checkAndBlockDateAfter15Orders,
   fetchPendingagencyorder,
-  updateAssignedorder
+  updateAssignedorder,
+  getOrderDetails
 };

@@ -20,20 +20,27 @@ const findDeliveryBoy = async () => {
     }
 }
 
-
 const add_delivery = async (req, res) => {
-
-    const { order_id, deliveryBoy_id,agency_id   } = req.body;
-    // const deliveryBoyId = await findDeliveryBoy();
+    const { order_id, deliveryBoy_id, agency_id } = req.body;
 
     try {
-        const response = await delivery.create({
-            order_id,
-            deliveryBoy_id,
-            agency_id
-        })
+        // Check if a delivery entry for this delivery boy already exists
+        let existingDelivery = await delivery.findOne({ deliveryBoy_id });
 
-        res.status(200).json({ "Message": response });
+        if (existingDelivery) {
+            // If it exists, add the new order_id to the array
+            existingDelivery.order_id.push(order_id);
+            await existingDelivery.save();
+            res.status(200).json({ "Message": "Order added to existing delivery", "Delivery": existingDelivery });
+        } else {
+            // If it doesn't exist, create a new delivery entry
+            const newDelivery = await delivery.create({
+                order_id: [order_id], // Create an array with the new order_id
+                deliveryBoy_id,
+                agency_id
+            });
+            res.status(200).json({ "Message": "New delivery created", "Delivery": newDelivery });
+        }
     } catch (error) {
         res.status(400).json({ "Message": error.message });
     }
@@ -86,4 +93,22 @@ const fetchDeliveryboy = async(req,res)=>{
     }
 }
 
-module.exports = { findDeliveryBoy,add_delivery, get_delivery, remove_delivery,fetchDeliveryboy };
+
+const personWise_delivery = async (req,res)=>{
+    try {
+        const {deliveryBoy_id} = req.body;
+
+        const response = await delivery.find({deliveryBoy_id});
+
+        return res.status(200).json({"Message":response})
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Failed to fetch personWise_delivery' });
+        
+    }
+}
+
+
+
+module.exports = { findDeliveryBoy,add_delivery, get_delivery, remove_delivery,fetchDeliveryboy,personWise_delivery };
