@@ -45,7 +45,7 @@ async function findNearestDistributor(customerCoords, distributors) {
 
   let nearestDistributor = null;
   let shortestDistance = Infinity;
-  const maxDistanceKm = 350; // Define a reasonable max distance for delivery
+  const maxDistanceKm = 500; // Define a reasonable max distance for delivery
 
   for (const distributor of distributors) {
     try {
