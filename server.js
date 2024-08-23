@@ -22,7 +22,13 @@ const bodyParser = require('body-parser');
 //   origin: ['http://localhost:5173','https://frozenwonder-frontend.onrender.com','https://frozenwonders.netlify.app/']
 // }));
 
-app.use(cors());
+const corsOptions = {
+  origin: ['http://frozenwonders.in','https://frozenwonders.in'], // Replace with your frontend URL
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
+// app.use(cors());
 app.use(bodyParser.json());
 
 
