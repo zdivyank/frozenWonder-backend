@@ -23,11 +23,12 @@ const bodyParser = require('body-parser');
 // }));
 
 const corsOptions = {
-  origin: ['http://frozenwonders.in','https://frozenwonders.in'], // Replace with your frontend URL
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  origin: ['https://frozenwonders.netlify.app','http://frozenwonders.in','https://frozenwonders.in',],  // Allow only your frontend domain
+  methods: 'GET,POST,PUT,DELETE',
+  optionsSuccessStatus: 204,
 };
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptions)); 
 // app.use(cors());
 app.use(bodyParser.json());
 
