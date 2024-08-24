@@ -52,7 +52,7 @@ app.use('/',videoRoute);
 // app.use("/api/blog", blogRouter);
 
 
-connectDb().then(app.listen(4000, () => {
+connectDb().then(app.listen(8001, () => {
     console.log(`server running on port 8000 👍`);
   }))
 
