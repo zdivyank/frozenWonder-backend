@@ -7,7 +7,8 @@ const addressSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema({
   cust_name: { type: String, required: true },
-  cust_number: { type: String, required: true },
+  cust_number: { type: String, required: true },//email
+  cust_contact: { type: String, required: true },//number
   // cust_number: { type: String, required: true },
   // cust_address: [addressSchema],
   cust_address: [{ type: String, required: true }],

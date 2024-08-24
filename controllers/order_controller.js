@@ -78,7 +78,8 @@ const addorder = async (req, res) => {
   try {
     const {
       cust_name,
-      cust_number,
+      cust_number,//email
+      cust_contact,//number
       pincode,
       order_date,
       timeslot,
@@ -165,6 +166,7 @@ const addorder = async (req, res) => {
       cust_name,
       cust_address,
       selected_address: addressIndex,
+      cust_contact,
       cust_number,
       pincode,
       order_product,
