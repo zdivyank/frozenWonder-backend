@@ -1,10 +1,13 @@
 const dotenv = require('dotenv');
 const OTP = require('../models/otp_model');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const Mailgun = require('mailgun.js');
+const formData = require('form-data');
+
+// Load environment variables from .env file
+dotenv.config();
 
 const sendOtp = async (req, res) => {
-
   const { cust_number } = req.body;
 
   if (!cust_number) {
@@ -13,25 +16,23 @@ const sendOtp = async (req, res) => {
 
   const otp = crypto.randomInt(100000, 999999).toString();
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-   host: 'smtp.gmail.com',
-   port: 465,
-   secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
+  // Configure Mailgun
+  const mailgun = new Mailgun(formData);
+  const mg = mailgun.client({
+    username: 'api',
+    key: process.env.MAILGUN_API_KEY,
   });
+
+  const data = {
+    from: `${process.env.MAILGUN_SENDER}`,
+    to: cust_number,
+    subject: 'Your OTP Code',
+    text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
+  };
 
   // Send the OTP via email
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: cust_number,
-      subject: 'Your OTP Code',
-      text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
-    });
+    await mg.messages.create(process.env.MAILGUN_DOMAIN, data);
 
     // Store OTP in MongoDB
     const otpRecord = new OTP({ cust_number, otp });
@@ -39,15 +40,12 @@ const sendOtp = async (req, res) => {
 
     res.status(200).json({ message: 'OTP sent successfully' });
   } catch (error) {
-    console.log(error);
-    
+    console.error(error);
     res.status(500).json({ error: 'Failed to send OTP' });
   }
+};
 
-}
-
-
-const verify_otp = async (req,res) => {
+const verify_otp = async (req, res) => {
   const { cust_number, otp } = req.body;
 
   if (!cust_number || !otp) {
@@ -68,9 +66,9 @@ const verify_otp = async (req,res) => {
     // Optionally, delete the OTP record after verification
     await OTP.deleteOne({ _id: otpRecord._id });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Failed to verify OTP' });
   }
+};
 
-
-}
-module.exports = { sendOtp,verify_otp }  
+module.exports = { sendOtp, verify_otp };

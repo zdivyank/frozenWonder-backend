@@ -381,18 +381,21 @@ const fetchFullday = async (req, res) => {
 
 const isAlreadyuser = async (req, res) => {
   const { cust_number } = req.body;
+  console.log('Received request with cust_number:', cust_number); // Add this line
   try {
     // Find the most recent order for the given customer number
     const response = await Order.find({ cust_number })
       .sort({ order_date: -1 }) // Assuming 'order_date' is the field representing the order date
       .limit(1); // Limit to the most recent order
 
+    console.log('Found orders:', response); // Add this line
     res.status(200).json({ response });
   } catch (error) {
-    console.log(error);
+    console.log('Error occurred:', error); // Log the error
     res.status(500).json({ message: 'An error occurred while checking user existence.' });
   }
 };
+
 
 
 const addaddress = async (req, res) => {
