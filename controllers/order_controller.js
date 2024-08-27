@@ -8,6 +8,36 @@ const opencage = require('opencage-api-client');
 // const Order = require('../models/order_model');
 const Coupon = require('../models/coupon_model');
 
+// async function geocodeAddress(address, retries = 3) {
+//   for (let attempt = 0; attempt < retries; attempt++) {
+//     try {
+//       if (!process.env.OPENCAGE_API_KEY) {
+//         throw new Error('OPENCAGE_API_KEY is not defined in environment variables');
+//       }
+
+//       console.log(`Requesting geocode for: ${address} (Attempt ${attempt + 1})`);
+
+//       const response = await opencage.geocode({ q: address, key: process.env.OPENCAGE_API_KEY });
+
+//       if (response.status.code !== 200) {
+//         console.error('Error response from OpenCage:', response);
+//         continue; // Try again
+//       }
+
+//       if (response.results.length > 0) {
+//         const { lat, lng } = response.results[0].geometry;
+//         return { lat, lng };
+//       } else {
+//         console.error('No results found for address:', address);
+//       }
+//     } catch (error) {
+//       console.error(`Error geocoding address (Attempt ${attempt + 1}):`, error);
+//       if (attempt === retries - 1) throw error; // Throw on last attempt
+//     }
+//   }
+//   return null;
+// } 
+
 async function geocodeAddress(address, retries = 3) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -16,6 +46,11 @@ async function geocodeAddress(address, retries = 3) {
       }
 
       console.log(`Requesting geocode for: ${address} (Attempt ${attempt + 1})`);
+
+      // Ensure the address includes city and state
+      if (!address.includes('Surat') && !address.includes('Gujarat')) {
+        address += ', Surat, Gujarat'; // Append default city and state
+      }
 
       const response = await opencage.geocode({ q: address, key: process.env.OPENCAGE_API_KEY });
 
@@ -36,7 +71,8 @@ async function geocodeAddress(address, retries = 3) {
     }
   }
   return null;
-} 
+}
+
 
 async function findNearestDistributor(customerCoords, distributors) {
   if (distributors.length === 1) {
@@ -69,7 +105,7 @@ async function findNearestDistributor(customerCoords, distributors) {
   if (shortestDistance <= maxDistanceKm) {
     return nearestDistributor;
   } else {
-    return null; // Or return the closest distributor if distance isn’t a constraint
+    return null; 
   }
 }
 

@@ -3,6 +3,8 @@ const OTP = require('../models/otp_model');
 const crypto = require('crypto');
 const Mailgun = require('mailgun.js');
 const formData = require('form-data');
+const moment = require('moment');
+
 
 // Load environment variables from .env file
 dotenv.config();
@@ -71,4 +73,54 @@ const verify_otp = async (req, res) => {
   }
 };
 
-module.exports = { sendOtp, verify_otp };
+const resendOtp = async (req, res) => {
+  const { cust_number } = req.body;
+
+  if (!cust_number) {
+    return res.status(400).json({ error: 'cust_number is required' });
+  }
+
+  // Find the latest OTP record for this customer number
+  const existingOtp = await OTP.findOne({ cust_number }).sort({ createdAt: -1 });
+
+  let otp;
+
+  // Check if the OTP exists and is still valid (e.g., within 5 minutes)
+  if (existingOtp && moment().diff(moment(existingOtp.createdAt), 'minutes') < 5) {
+    otp = existingOtp.otp; // Resend the existing OTP
+  } else {
+    otp = crypto.randomInt(100000, 999999).toString(); // Generate a new OTP
+  }
+
+  // Configure Mailgun
+  const mailgun = new Mailgun(formData);
+  const mg = mailgun.client({
+    username: 'api',
+    key: process.env.MAILGUN_API_KEY,
+  });
+
+  const data = {
+    from: `${process.env.MAILGUN_SENDER}`,
+    to: cust_number,
+    subject: 'Your OTP Code',
+    text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
+  };
+
+  try {
+    await mg.messages.create(process.env.MAILGUN_DOMAIN, data);
+
+    // Save the new OTP if it was generated
+    if (!existingOtp || otp !== existingOtp.otp) {
+      const otpRecord = new OTP({ cust_number, otp });
+      await otpRecord.save();
+    }
+
+    res.status(200).json({ message: 'OTP resent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to resend OTP' });
+  }
+};
+
+
+module.exports = { sendOtp, verify_otp,resendOtp };
