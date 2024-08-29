@@ -4,6 +4,8 @@ const Agency = require('../models/agency_model');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const opencage = require('opencage-api-client');
+const ExcelJS = require('exceljs');
+
 
 // const Order = require('../models/order_model');
 const Coupon = require('../models/coupon_model');
@@ -596,6 +598,74 @@ const getOrderDetails = async (req, res) => {
 };
 
 
+const excelData = async (req,res) => {
+  try {
+    const data = await Order.find();
+
+    // Create Excel workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Orders');
+
+    // Define columns for the worksheet
+    worksheet.columns = [
+      { header: 'Customer Name', key: 'cust_name', width: 20 },
+      { header: 'Customer Number (Email)', key: 'cust_number', width: 30 },
+      { header: 'Customer Contact (Number)', key: 'cust_contact', width: 20 },
+      { header: 'Customer Addresses', key: 'cust_address', width: 50 }, // This will handle array of addresses
+      { header: 'Selected Address Index', key: 'selected_address', width: 10 },
+      { header: 'Pincode', key: 'pincode', width: 10 },
+      { header: 'Order Date', key: 'order_date', width: 15 },
+      { header: 'Timeslot', key: 'timeslot', width: 15 },
+      { header: 'Product Name', key: 'order_product_name', width: 50 },
+      // { header: 'Quantity', key: 'order_product_quantity', width: 10 },
+      // { header: 'Price', key: 'order_product_price', width: 10 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Total Amount', key: 'total_amount', width: 15 },
+      { header: 'Agency ID', key: 'agency_id', width: 15 },
+      { header: 'Coupon Code', key: 'coupon_code', width: 15 },
+      { header: 'Assigned Delivery Boys', key: 'assigned_delivery_boys', width: 30 }
+    ];
+
+    // Populate the worksheet with data
+    data.forEach(order => {
+      // Handle multiple addresses by joining them into a single string
+      const addressString = Array.isArray(order.cust_address) ? order.cust_address.join(', ') : order.cust_address;
+
+      // Add row data
+      worksheet.addRow({
+        cust_name: order.cust_name,
+        cust_number: order.cust_number,
+        cust_contact: order.cust_contact,
+        cust_address: addressString,
+        selected_address: order.selected_address,
+        pincode: order.pincode,
+        order_date: order.order_date.toISOString().substring(0, 10),
+        timeslot: order.timeslot,
+        order_product_name: order.order_product,
+        // order_product_quantity: order.order_product.quantity,
+        // order_product_price: order.order_product.price,
+        status: order.status,
+        total_amount: order.total_amount,
+        agency_id: order.agency_id,
+        coupon_code: order.coupon_code,
+        assigned_delivery_boys: order.assigned_delivery_boys
+      });
+    });
+
+    // Save the workbook to a buffer and send as a download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=orders.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error('Error creating Excel file:', error);
+    res.status(500).json({ message: "Excel Data not found" });
+  }
+}
+
+
 module.exports = {
   addorder,
   vieworder,
@@ -615,5 +685,6 @@ module.exports = {
   checkAndBlockDateAfter15Orders,
   fetchPendingagencyorder,
   updateAssignedorder,
-  getOrderDetails
+  getOrderDetails,
+  excelData
 };

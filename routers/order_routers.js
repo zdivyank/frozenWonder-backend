@@ -18,7 +18,8 @@ const {
   assignOrdersToDeliveryBoys,
   fetchPendingagencyorder,
   updateAssignedorder,
-  getOrderDetails
+  getOrderDetails,
+  excelData
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -43,4 +44,5 @@ router.post('/updateAssignedOrders', updateAssignedorder);
 router.post('/assign-orders', assignOrdersToDeliveryBoys);
 
 router.get('/order/:orderId', getOrderDetails);
+router.get('/downloadexcel', excelData);
 module.exports = router;

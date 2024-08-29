@@ -8,4 +8,6 @@ router.route("/verifyotp").post(verify_otp);
 // router.route("/verifyotp").post(verify_otp);
 router.route("/resendOtp").post(resendOtp);
 
+
+
 module.exports = router;

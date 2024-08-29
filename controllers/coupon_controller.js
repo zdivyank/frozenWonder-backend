@@ -33,6 +33,21 @@ const remove_coupon = async (req, res) => {
 };
 
 
+const edit_coupon = async (req,res) => {
+  const {_id} = req.params;
+  const {code,discount,usage_limit,usage_count }= req.body;
+  try {
+    const response = await coupon.findByIdAndUpdate(_id,{code,discount,usage_limit,usage_count},{ new: true }  );
+    console.log(response);
+    
+    res.status(200).json({ "message": response });
+  } catch (error) {
+    res.status(400).json({ "message": error.message });
+  }
+}
+
+
+
 // const validate_coupon = async (req,res) => {
 //     try {
 //         const { coupon_code } = req.body;
@@ -57,4 +72,4 @@ const remove_coupon = async (req, res) => {
 //         res.status(500).json({ message: 'Error validating coupon', error: error.message });
 //       }
 //     };
-module.exports = {add_coupon, get_coupon, remove_coupon};
+module.exports = {add_coupon, get_coupon, remove_coupon,edit_coupon};
