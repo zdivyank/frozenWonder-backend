@@ -621,9 +621,9 @@ const excelData = async (req,res) => {
       // { header: 'Price', key: 'order_product_price', width: 10 },
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Total Amount', key: 'total_amount', width: 15 },
-      { header: 'Agency ID', key: 'agency_id', width: 15 },
-      { header: 'Coupon Code', key: 'coupon_code', width: 15 },
-      { header: 'Assigned Delivery Boys', key: 'assigned_delivery_boys', width: 30 }
+      // { header: 'Agency ID', key: 'agency_id', width: 15 },
+      // { header: 'Coupon Code', key: 'coupon_code', width: 15 },
+      // { header: 'Assigned Delivery Boys', key: 'assigned_delivery_boys', width: 30 }
     ];
 
     // Populate the worksheet with data
@@ -646,9 +646,9 @@ const excelData = async (req,res) => {
         // order_product_price: order.order_product.price,
         status: order.status,
         total_amount: order.total_amount,
-        agency_id: order.agency_id,
-        coupon_code: order.coupon_code,
-        assigned_delivery_boys: order.assigned_delivery_boys
+        // agency_id: order.agency_id,
+        // coupon_code: order.coupon_code,
+        // assigned_delivery_boys: order.assigned_delivery_boys
       });
     });
 
