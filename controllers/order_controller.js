@@ -288,7 +288,7 @@ const allPincode = async (req, res) => {
 const locationWiseOrder = async (req, res) => {
   const { pincode } = req.body;
   try {
-    const response = await Order.find({ pincode });
+    const response = await Order.find({ pincode }).populate('agency_id', 'agency_name');
     if (response.length === 0) {
       return res.status(404).json({ message: 'No Orders Found for this Pincode' });
     }

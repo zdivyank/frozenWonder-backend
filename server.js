@@ -59,7 +59,7 @@ app.use('/',videoRoute);
 
 
 connectDb().then(app.listen(8001, () => {
-    console.log(`server running on port 8000 👍`);
+    console.log(`server running on port 8001 👍`);
   }))
 
 

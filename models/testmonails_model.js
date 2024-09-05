@@ -13,6 +13,11 @@ const TestimonailsSchema = new Schema({
   message: {
     type: String,
     required: true,
+  },
+ verify: {
+    type: Boolean,
+    default:false,
+    required: true,
   }
 });
 
