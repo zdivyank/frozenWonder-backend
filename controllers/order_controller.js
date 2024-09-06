@@ -597,8 +597,7 @@ const getOrderDetails = async (req, res) => {
   }
 };
 
-
-const excelData = async (req,res) => {
+const excelData = async (req, res) => {
   try {
     const data = await Order.find();
 
@@ -606,12 +605,13 @@ const excelData = async (req,res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Orders');
 
-    // Define columns for the worksheet
+    // Define columns for the worksheet, including Serial No
     worksheet.columns = [
+      { header: 'Serial No', key: 'serial_no', width: 10 },  // New Serial No field
       { header: 'Customer Name', key: 'cust_name', width: 20 },
       { header: 'Customer Number (Email)', key: 'cust_number', width: 30 },
       { header: 'Customer Contact (Number)', key: 'cust_contact', width: 20 },
-      { header: 'Customer Addresses', key: 'cust_address', width: 50 }, // This will handle array of addresses
+      { header: 'Customer Addresses', key: 'cust_address', width: 50 }, // Handle array of addresses
       { header: 'Selected Address Index', key: 'selected_address', width: 10 },
       { header: 'Pincode', key: 'pincode', width: 10 },
       { header: 'Order Date', key: 'order_date', width: 15 },
@@ -627,19 +627,23 @@ const excelData = async (req,res) => {
     ];
 
     // Populate the worksheet with data
-    data.forEach(order => {
+    data.forEach((order, index) => {
       // Handle multiple addresses by joining them into a single string
       const addressString = Array.isArray(order.cust_address) ? order.cust_address.join(', ') : order.cust_address;
 
-      // Add row data
+      // Format the date to 'dd/mm/yyyy'
+      const formattedDate = new Date(order.order_date).toLocaleDateString('en-GB');
+
+      // Add row data with Serial No
       worksheet.addRow({
+        serial_no: index + 1,  // Serial number starting from 1
         cust_name: order.cust_name,
         cust_number: order.cust_number,
         cust_contact: order.cust_contact,
         cust_address: addressString,
         selected_address: order.selected_address,
         pincode: order.pincode,
-        order_date: order.order_date.toISOString().substring(0, 10),
+        order_date: formattedDate,  // Use formatted date
         timeslot: order.timeslot,
         order_product_name: order.order_product,
         // order_product_quantity: order.order_product.quantity,
@@ -652,11 +656,11 @@ const excelData = async (req,res) => {
       });
     });
 
-    // test log
-    // Save the workbook to a buffer and send as a download
+    // Set response headers for file download
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=orders.xlsx');
 
+    // Write workbook to response
     await workbook.xlsx.write(res);
     res.end();
 
@@ -664,7 +668,8 @@ const excelData = async (req,res) => {
     console.error('Error creating Excel file:', error);
     res.status(500).json({ message: "Excel Data not found" });
   }
-}
+};
+
 
 
 module.exports = {
