@@ -11,9 +11,8 @@ cloudinary.config({
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-
 const addTestimonails = async (req, res) => {
-  const { cust_name, message, verify } = req.body;
+  const { cust_name, message, verify,contact_number } = req.body;
 
   try {
     // Check if all required fields are present
@@ -21,32 +20,30 @@ const addTestimonails = async (req, res) => {
       return res.status(400).json({ "Message": "Customer name and message are required" });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ "Message": "File is required" });
+    let imageUrl = ''; // Default to an empty string if no image is provided
+
+    // Check if a file was uploaded
+    if (req.file) {
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: 'uploads', resource_type: 'auto' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+      });
+
+      const uploadResult = await uploadPromise;
+      imageUrl = uploadResult.secure_url; // Set the image URL from the upload result
     }
-
-    // You might want to add file type checking here
-    // if (!req.file.mimetype.startsWith('image/')) {
-    //   return res.status(400).json({ "Message": "File must be an image" });
-    // }
-
-    const uploadPromise = new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: 'uploads', resource_type: 'auto' },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
-    });
-
-    const uploadResult = await uploadPromise;
 
     const newTestimonial = await Testimonails.create({
       cust_name,
-      image: uploadResult.secure_url,
+      image: imageUrl, // Save the image URL if provided
       message,
+      contact_number,
       verify: verify === 'true' // Convert string to boolean
     });
 
@@ -56,6 +53,7 @@ const addTestimonails = async (req, res) => {
     res.status(400).json({ "Message": "Failed to add testimonial", "Error": error.message });
   }
 };
+
 
 const getTestimonails = async (req, res) => {
   try {

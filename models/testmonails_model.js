@@ -8,11 +8,15 @@ const TestimonailsSchema = new Schema({
   },
   image: {
     type: String,
-    required: true,
+    required: false,
   },
   message: {
     type: String,
     required: true,
+  },
+  contact_number: {
+    type: String,
+    required: false,
   },
  verify: {
     type: Boolean,
