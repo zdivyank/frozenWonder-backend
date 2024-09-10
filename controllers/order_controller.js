@@ -112,12 +112,126 @@ async function findNearestDistributor(customerCoords, distributors) {
 }
 
 
+// const addorder = async (req, res) => {
+//   try {
+//     const {
+//       cust_name,
+//       cust_number,//email
+//       cust_contact,//number
+//       pincode,
+//       order_date,
+//       timeslot,
+//       selected_address,
+//       cust_address,
+//       order_product,
+//       coupon_code, // This is the coupon code provided by the user
+//     } = req.body;
+
+//     const formattedOrderDate = moment(order_date).format('YYYY-MM-DD');
+
+//     // Calculate the base total amount from the order products
+//     let baseTotalAmount = 0;
+//     order_product.forEach(product => {
+//       baseTotalAmount += product.price * product.quantity;
+//     });
+
+//     // Find the coupon in the database
+//     let coupon = null;
+//     if (coupon_code) {
+//       coupon = await Coupon.findOne({ code: coupon_code });
+
+//       if (!coupon) {
+//         return res.status(400).json({ message: 'Invalid coupon code' });
+//       }
+
+//       // Check if coupon usage limit is exceeded
+//       if (coupon.usage_count >= coupon.usage_limit) {
+//         return res.status(400).json({ message: 'Coupon code usage limit exceeded' });
+//       }
+
+//       // Apply discount from coupon
+//       const discount = coupon.discount; // Assuming discount is a percentage
+//       baseTotalAmount -= baseTotalAmount * (discount / 100);
+
+//       // Update coupon usage count
+//       coupon.usage_count += 1;
+//       await coupon.save();
+//     }
+
+//     const addressIndex = parseInt(selected_address, 10) - 1;
+//     if (addressIndex < 0 || addressIndex >= cust_address.length) {
+//       return res.status(400).json({ message: 'Invalid selected address index' });
+//     }
+//     const addressToGeocode = cust_address[addressIndex];
+
+//     const customerCoords = await geocodeAddress(addressToGeocode);
+
+//     if (!customerCoords) {
+//       return res.status(400).json({ message: 'Failed to geocode customer address' });
+//     }
+
+//     const distributors = await Agency.find({});
+//     const nearestAgency = await findNearestDistributor(customerCoords, distributors);
+
+//     if (!nearestAgency) {
+//       return res.status(400).json({ message: 'No nearby distributor found. We may not be able to serve this area.' });
+//     }
+
+//     const blocked = await Order.findOne({
+//       blocked_dates: {
+//         $elemMatch: {
+//           date: new Date(order_date),
+//           $or: [
+//             { timeslot: timeslot },
+//             { timeslot: 'fullday' }
+//           ]
+//         }
+//       }
+//     });
+
+//     if (blocked) {
+//       return res.status(400).json({ message: 'This date and timeslot are not available for delivery.' });
+//     }
+
+//     const now = moment();
+//     const orderDateTime = moment(order_date + ' ' + (timeslot === 'morning' ? '08:00' : '16:00'), 'YYYY-MM-DD HH:mm');
+
+//     if (orderDateTime.diff(now, 'hours') < 12) {
+//       return res.status(400).json({ message: 'Orders must be placed at least 12 hours in advance.' });
+//     }
+
+//     const newOrder = new Order({
+//       cust_name,
+//       cust_address,
+//       selected_address: addressIndex,
+//       cust_contact,
+//       cust_number,
+//       pincode,
+//       order_product,
+//       total_amount: baseTotalAmount, // Use the calculated total amount
+//       order_date: new Date(order_date),
+//       timeslot,
+//       agency_id: nearestAgency._id,
+//       coupon_code: coupon ? coupon._id : null, // Save the ObjectId of the coupon
+//     });
+
+//     await newOrder.save();
+//     await checkAndBlockDateAfter15Orders({ order_date, timeslot });
+
+//     return res.status(200).json({ message: 'Order placed successfully', order: newOrder });
+//   } catch (error) {
+//     console.error('Error in addorder:', error);
+//     return res.status(500).json({ message: 'Failed to place order', error: error.message });
+//   }
+// };
+
+
 const addorder = async (req, res) => {
   try {
     const {
       cust_name,
-      cust_number,//email
-      cust_contact,//number
+      cust_number, //email
+      cust_contact, //number
       pincode,
       order_date,
       timeslot,
@@ -177,6 +291,7 @@ const addorder = async (req, res) => {
       return res.status(400).json({ message: 'No nearby distributor found. We may not be able to serve this area.' });
     }
 
+    // Check if the date/timeslot is blocked
     const blocked = await Order.findOne({
       blocked_dates: {
         $elemMatch: {
@@ -200,6 +315,17 @@ const addorder = async (req, res) => {
       return res.status(400).json({ message: 'Orders must be placed at least 12 hours in advance.' });
     }
 
+    // *** Check if the order limit has been reached for this date ***
+    const orderCountForDate = await Order.countDocuments({
+      order_date: new Date(order_date),
+      timeslot: timeslot,
+    });
+
+    if (orderCountForDate >= 15) {
+      return res.status(400).json({ message: `Order limit reached for ${formattedOrderDate}. Please select the next available date.` });
+    }
+
+    // Create a new order
     const newOrder = new Order({
       cust_name,
       cust_address,
@@ -216,7 +342,16 @@ const addorder = async (req, res) => {
     });
 
     await newOrder.save();
-    await checkAndBlockDateAfter15Orders({ order_date, timeslot });
+
+    // *** Automatically block the date if 15 orders are reached ***
+    const updatedOrderCount = await Order.countDocuments({
+      order_date: new Date(order_date),
+      timeslot: timeslot,
+    });
+
+    if (updatedOrderCount >= 15) {
+      await checkAndBlockDateAfter15Orders({ order_date, timeslot });
+    }
 
     return res.status(200).json({ message: 'Order placed successfully', order: newOrder });
   } catch (error) {
@@ -224,6 +359,7 @@ const addorder = async (req, res) => {
     return res.status(500).json({ message: 'Failed to place order', error: error.message });
   }
 };
+
 
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
@@ -559,7 +695,7 @@ const checkAndBlockDateAfter15Orders = async ({ order_date }) => {
     });
 
     // If order count reaches 15, block the entire date
-    if (orderCount >= 15) {
+    if (orderCount >= 4) {
       const existingBlock = await Order.findOne({
         'blocked_dates.date': new Date(formattedDate),
         'blocked_dates.timeslot': 'fullday',
@@ -670,7 +806,190 @@ const excelData = async (req, res) => {
   }
 };
 
+// const availableDate = async (req, res) => {
+//   try {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0); // Reset today's time to midnight for comparison
 
+//     let nextAvailableDate = new Date(today);
+//     nextAvailableDate.setDate(today.getDate() + 1); // Start checking from tomorrow
+
+//     console.log("Starting search from:", nextAvailableDate.toISOString());
+
+//     while (true) {
+//       // Create start and end boundaries for the current day being checked
+//       const startOfDay = new Date(nextAvailableDate);
+//       startOfDay.setHours(0, 0, 0, 0); // Start of the day
+
+//       const endOfDay = new Date(nextAvailableDate);
+//       endOfDay.setHours(23, 59, 59, 999); // End of the day
+
+//       console.log(`Checking orders between ${startOfDay} and ${endOfDay}`);
+
+//       // Count orders for this specific date
+//       const orderCount = await Order.countDocuments({
+//         order_date: {
+//           $gte: startOfDay,
+//           $lte: endOfDay
+//         }
+//       });
+
+//       console.log(`Order count for ${nextAvailableDate.toISOString()}: ${orderCount}`);
+
+//       // If fewer than 4 (or 15 for actual use) orders exist, this date is available
+//       if (orderCount < 15) {
+//         const availableDateString = nextAvailableDate.toISOString().split('T')[0]; // Normalize to YYYY-MM-DD
+//         console.log("Next available date:", availableDateString);
+//         return res.json({ nextAvailableDate: availableDateString });
+//       }
+
+//       // If 4 (or more) orders exist, move to the next day
+//       nextAvailableDate.setDate(nextAvailableDate.getDate() + 1); // Increment the day
+//     }
+//   } catch (error) {
+//     console.error('Error in availableDate:', error);
+//     return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
+//   }
+// };
+// const availableDate = async (req, res) => {
+//   try {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0); // Set today's time to midnight
+
+//     let nextAvailableDate = new Date(today);
+//     nextAvailableDate.setDate(today.getDate() + 1); // Start checking from tomorrow
+
+//     while (true) {
+//       // Create start and end boundaries for the current day being checked
+//       const startOfDay = new Date(nextAvailableDate);
+//       startOfDay.setHours(0, 0, 0, 0); // Start of the day
+
+//       const endOfDay = new Date(nextAvailableDate);
+//       endOfDay.setHours(23, 59, 59, 999); // End of the day
+
+//       // Count orders for this specific date
+//       const orderCount = await Order.countDocuments({
+//         order_date: {
+//           $gte: startOfDay,
+//           $lte: endOfDay
+//         }
+//       });
+
+//       // If fewer than 15 orders exist, this date is available
+//       if (orderCount < 15) {
+//         const availableDateString = nextAvailableDate.toISOString().split('T')[0]; // Normalize to YYYY-MM-DD
+//         console.log("Next available date:", availableDateString);
+//         return res.json({ nextAvailableDate: availableDateString });
+//       }
+
+//       // If 15 or more orders exist, move to the next day
+//       nextAvailableDate.setDate(nextAvailableDate.getDate() + 1); // Increment the day
+//     }
+//   } catch (error) {
+//     console.error('Error in availableDate:', error);
+//     return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
+//   }
+// };
+
+// const availableDate = async (req, res) => {
+//   try {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0); // Set today's time to midnight for comparison
+
+//     let nextAvailableDate = new Date(today);
+//     nextAvailableDate.setDate(today.getDate() + 1); // Start checking from tomorrow
+
+//     let currentAvailableDate = null;
+
+//     while (true) {
+//       const startOfDay = new Date(nextAvailableDate);
+//       startOfDay.setHours(0, 0, 0, 0);
+
+//       const endOfDay = new Date(nextAvailableDate);
+//       endOfDay.setHours(23, 59, 59, 999);
+
+//       // Count orders for this specific date
+//       const orderCount = await Order.countDocuments({
+//         order_date: {
+//           $gte: startOfDay,
+//           $lte: endOfDay
+//         }
+//       });
+
+//       if (!currentAvailableDate && orderCount < 15) {
+//         currentAvailableDate = new Date(nextAvailableDate);
+//       }
+
+//       // If the current date has 15 orders, move to the next one
+//       if (orderCount >= 15) {
+//         // nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
+//         // continue; // Move to the next date
+//         const diffDays = Math.ceil((nextAvailableDate - today) / (1000 * 60 * 60 * 24));
+//         // Increment nextAvailableDate by the calculated difference plus one day
+//         nextAvailableDate.setDate(today.getDate() + diffDays + 1);
+//         continue; // Move to the next date
+//       }
+
+//       if (currentAvailableDate) {
+//         return res.json({
+//           currentAvailableDate: currentAvailableDate.toISOString().split('T')[0],
+//           nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.error('Error in availableDate:', error);
+//     return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
+//   }
+// };
+
+
+const availableDate = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set today's time to midnight for comparison
+
+    let currentAvailableDate = null;
+    let nextAvailableDate = new Date(today);
+    nextAvailableDate.setDate(today.getDate() + 1); // Start checking from tomorrow
+
+    while (true) {
+      const startOfDay = new Date(nextAvailableDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(nextAvailableDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Count orders for this specific date
+      const orderCount = await Order.countDocuments({
+        order_date: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        }
+      });
+
+      if (orderCount < 15) {
+        if (!currentAvailableDate) {
+          currentAvailableDate = new Date(nextAvailableDate);
+          // Move to the next day to find the next available date
+          nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
+        } else {
+          // We've found both current and next available dates
+          return res.json({
+            currentAvailableDate: currentAvailableDate.toISOString().split('T')[0],
+            nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
+          });
+        }
+      } else {
+        // If the current date is fully booked, move to the next day
+        nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
+      }
+    }
+  } catch (error) {
+    console.error('Error in availableDate:', error);
+    return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
+  }
+};
 
 module.exports = {
   addorder,
@@ -692,5 +1011,6 @@ module.exports = {
   fetchPendingagencyorder,
   updateAssignedorder,
   getOrderDetails,
-  excelData
+  excelData,
+  availableDate
 };
