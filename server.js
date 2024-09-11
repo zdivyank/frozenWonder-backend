@@ -29,13 +29,16 @@ const bodyParser = require('body-parser');
 // };
 
 // app.use(cors(corsOptions)); 
-app.use(cors()) ;
+// app.use(cors()) ;
 
-// app.use(cors({
-//   origin: ['https://frozenwonders.in',"http://localhost:5173/"],
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-// }));
+const corsOptions = {
+  origin: ['https://frozenwonders.in','http://localhost:5173'], // replace with your frontend domain
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
+
 app.use(bodyParser.json());
 
 
