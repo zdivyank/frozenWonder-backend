@@ -2,7 +2,6 @@ const Testimonails = require('../models/testmonails_model');
 const multer = require('multer');
 const streamifier = require('streamifier');
 const cloudinary = require('cloudinary').v2;
-const sharp = require('sharp');
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -11,70 +10,41 @@ cloudinary.config({
 });
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 }});
-
+const upload = multer({ storage: storage });
 const addTestimonails = async (req, res) => {
-  const { cust_name, message, verify, contact_number } = req.body;
+  const { cust_name, message, verify,contact_number } = req.body;
 
   try {
+    // Check if all required fields are present
     if (!cust_name || !message) {
       return res.status(400).json({ "Message": "Customer name and message are required" });
     }
 
-    let imageUrl = '';
+    let imageUrl = ''; // Default to an empty string if no image is provided
 
+    // Check if a file was uploaded
     if (req.file) {
-      console.log('Original file size:', req.file.buffer.length);
-
-      // Aggressively compress image using Sharp
-      let compressedImageBuffer = await sharp(req.file.buffer)
-        .resize({ width: 500, height: 500, fit: 'inside' }) // Reduce dimensions
-        .jpeg({ quality: 30, progressive: true }) // Start with very low quality
-        .toBuffer();
-
-      // Further compress if still too large
-      let attempts = 0;
-      while (compressedImageBuffer.length > 15 * 1024 && attempts < 3) { // Aim for 15KB
-        compressedImageBuffer = await sharp(compressedImageBuffer)
-          .jpeg({ quality: 20 - attempts * 5 }) // Reduce quality further
-          .toBuffer();
-        attempts++;
-      }
-
-      console.log('Compressed image size:', compressedImageBuffer.length);
-
       const uploadPromise = new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: 'uploads',
-            resource_type: 'auto',
-            transformation: [
-              { quality: 'auto:low', fetch_format: 'auto' }
-            ]
-          },
+          { folder: 'uploads', resource_type: 'auto' },
           (error, result) => {
-            if (error) {
-              console.error('Error during Cloudinary upload:', error);
-              reject(error);
-            } else {
-              console.log('Cloudinary upload result:', result);
-              resolve(result);
-            }
+            if (error) reject(error);
+            else resolve(result);
           }
         );
-        streamifier.createReadStream(compressedImageBuffer).pipe(uploadStream);
+        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
       });
 
       const uploadResult = await uploadPromise;
-      imageUrl = uploadResult.secure_url;
+      imageUrl = uploadResult.secure_url; // Set the image URL from the upload result
     }
 
     const newTestimonial = await Testimonails.create({
       cust_name,
-      image: imageUrl,
+      image: imageUrl, // Save the image URL if provided
       message,
       contact_number,
-      verify: verify === 'true'
+      verify: verify === 'true' // Convert string to boolean
     });
 
     res.status(201).json({ "Message": "Testimonial created successfully", "Data": newTestimonial });
@@ -83,7 +53,6 @@ const addTestimonails = async (req, res) => {
     res.status(400).json({ "Message": "Failed to add testimonial", "Error": error.message });
   }
 };
-
 
 
 const getTestimonails = async (req, res) => {
