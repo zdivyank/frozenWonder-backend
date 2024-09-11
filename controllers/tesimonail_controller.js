@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage ,limits: { fileSize: 50 * 1024 * 1024 }});
 const addTestimonails = async (req, res) => {
   const { cust_name, message, verify,contact_number } = req.body;
 
