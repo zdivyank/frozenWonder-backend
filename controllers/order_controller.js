@@ -107,7 +107,7 @@ async function findNearestDistributor(customerCoords, distributors) {
   if (shortestDistance <= maxDistanceKm) {
     return nearestDistributor;
   } else {
-    return null; 
+    return null;
   }
 }
 
@@ -393,6 +393,31 @@ const vieworder = async (req, res) => {
     return res.status(500).json({ message: 'Failed to retrieve orders' });
   }
 };
+const viewvalidorders = async (req, res) => {
+  try {
+    const response = await Order.find({
+      status: { $in: ["Pending", "Delivered"] }
+    }).populate('agency_id', 'agency_name');
+    if (response.length === 0) {
+      return res.status(404).json({ message: 'No Orders Found' });
+    }
+    return res.status(200).json({ orders: response });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: 'Failed to retrieve orders' });
+  }
+};
+const viewarchivedorders = async (req, res) => {
+  try {
+    const response = await Order.find({status:"archive"}).populate('agency_id', 'agency_name');
+    return res.status(200).json({ orders: response });
+  } catch (error) {
+    console.log(error);
+    // console.log(error);
+    
+    return res.status(500).json({ message: 'Failed to retrieve orders' });
+  } 
+};
 
 const deleteorder = async (req, res) => {
   try {
@@ -632,55 +657,55 @@ const fetchagencyorder = async (req, res) => {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-  };
+};
 
-  
-  const fetchPendingagencyorder = async (req, res) => {
-    try {
-      const { _id } = req.params;
-  
-      console.log(_id);
-      
-      const orders = await Order.find({ 
-        agency_id: _id, 
-        assigned_delivery_boys: 'false' 
-      });
-  
-      console.log(orders);
-  
-      if (orders.length === 0) {
-        return res.status(404).json({ message: 'No pending orders found for this agency.' });
-      }
-  
-      res.status(200).json(orders);
-    } catch (error) {
-      console.error('Error fetching pending orders:', error);
-      res.status(500).json({ message: 'Internal Server Error' });
-    }
-  };
-  
 
-  const updateAssignedorder = async (req,res) => {
-    try {
-      const { order_id } = req.body; 
-      // Update the orders to set assigned_delivery_boys to true
-      const result = await Order.updateMany(
-        { _id: { $in: order_id } },
-        { $set: { assigned_delivery_boys: true } }
-      );
-  
-      if (result.modifiedCount === 0) {
-        return res.status(404).json({ message: 'No orders were updated' });
-      }
-  
-      res.status(200).json({ message: 'Orders updated successfully' });
-    } catch (error) {
-      console.error('Error updating orders:', error);
-      res.status(500).json({ message: 'Internal Server Error' });
+const fetchPendingagencyorder = async (req, res) => {
+  try {
+    const { _id } = req.params;
+
+    console.log(_id);
+
+    const orders = await Order.find({
+      agency_id: _id,
+      assigned_delivery_boys: 'false'
+    });
+
+    console.log(orders);
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No pending orders found for this agency.' });
     }
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error('Error fetching pending orders:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
- 
-  
+};
+
+
+const updateAssignedorder = async (req, res) => {
+  try {
+    const { order_id } = req.body;
+    // Update the orders to set assigned_delivery_boys to true
+    const result = await Order.updateMany(
+      { _id: { $in: order_id } },
+      { $set: { assigned_delivery_boys: true } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: 'No orders were updated' });
+    }
+
+    res.status(200).json({ message: 'Orders updated successfully' });
+  } catch (error) {
+    console.error('Error updating orders:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+
 const assignOrdersToDeliveryBoys = async (req, res) => {
 
 
@@ -718,24 +743,27 @@ const checkAndBlockDateAfter15Orders = async ({ order_date }) => {
 
 const getOrderDetails = async (req, res) => {
   try {
-      const { orderId } = req.params;
-    
-      const order = await Order.findById(orderId);
+    const { orderId } = req.params;
 
-      if (!order) {
-          return res.status(404).json({ "Message": "Order not found" });
-      }
+    const order = await Order.findById(orderId);
 
-      return res.status(200).json(order);
+    if (!order) {
+      return res.status(404).json({ "Message": "Order not found" });
+    }
+
+    return res.status(200).json(order);
   } catch (error) {
-      console.error('Error in getOrderDetails:', error);
-      return res.status(500).json({ "Message": "Internal server error" });
+    console.error('Error in getOrderDetails:', error);
+    return res.status(500).json({ "Message": "Internal server error" });
   }
 };
 
 const excelData = async (req, res) => {
   try {
-    const data = await Order.find();
+    // const data = await Order.find();
+    const data = await Order.find({
+      status: { $in: ["Pending", "Delivered"] }
+    }).populate('agency_id', 'agency_name');
 
     // Create Excel workbook and worksheet
     const workbook = new ExcelJS.Workbook();
@@ -996,30 +1024,34 @@ const availableDate = async (req, res) => {
 const filterOrders = async (req, res) => {
   const { pincode, startDate, endDate } = req.query;
 
-  try {
-    // Build filter criteria
-    const filters = {};
-    if (pincode) {
-      filters.pincode = pincode;
-    }
-    if (startDate && endDate) {
-      filters.order_date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
-
-    // Fetch filtered data
-    const orders = await Order.find(filters).populate('agency_id','agency_name');
-    res.status(200).json(orders);
-  } catch (error) {
-    res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
+try {
+  // Build filter criteria
+  const filters = { status: { $ne: "archive" } }; // Exclude orders with 'archived' status
+  
+  if (pincode) {
+    filters.pincode = pincode;
   }
+  if (startDate && endDate) {
+    filters.order_date = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate)
+    };
+  }
+
+  // Fetch filtered data
+  const orders = await Order.find(filters).populate('agency_id', 'agency_name');
+  res.status(200).json(orders);
+} catch (error) {
+  res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
+}
+
 };
 
 module.exports = {
   addorder,
   vieworder,
+  viewvalidorders,
+  viewarchivedorders,
   deleteorder,
   locationWiseOrder,
   allPincode,

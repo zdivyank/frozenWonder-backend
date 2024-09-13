@@ -21,6 +21,10 @@ const InquiriesSchema = new Schema({
   message: {
     type: String,
     required: true,
+  },
+  status: {
+    type: Boolean,
+    default :false,
   }
 });
 

@@ -3,6 +3,8 @@ const router = express.Router();
 const { 
   addorder, 
   vieworder,
+  viewvalidorders,
+  viewarchivedorders,
   deleteorder, 
   locationWiseOrder,
   allPincode,
@@ -26,6 +28,8 @@ const {
 
 router.route("/addorder").post(addorder);
 router.route("/vieworders").get(vieworder);
+router.route("/viewvalidorders").get(viewvalidorders);
+router.route("/viewarchivedorders").get(viewarchivedorders);
 router.route("/deleteorder/:_id").delete(deleteorder);
 router.route("/orderlocation").post(locationWiseOrder);
 router.route("/allPincode").get(allPincode);
