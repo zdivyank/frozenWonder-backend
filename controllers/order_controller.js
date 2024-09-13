@@ -991,6 +991,32 @@ const availableDate = async (req, res) => {
   }
 };
 
+
+
+const filterOrders = async (req, res) => {
+  const { pincode, startDate, endDate } = req.query;
+
+  try {
+    // Build filter criteria
+    const filters = {};
+    if (pincode) {
+      filters.pincode = pincode;
+    }
+    if (startDate && endDate) {
+      filters.order_date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    // Fetch filtered data
+    const orders = await Order.find(filters).populate('agency_id','agency_name');
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
+  }
+};
+
 module.exports = {
   addorder,
   vieworder,
@@ -1012,5 +1038,6 @@ module.exports = {
   updateAssignedorder,
   getOrderDetails,
   excelData,
-  availableDate
+  availableDate,
+  filterOrders
 };

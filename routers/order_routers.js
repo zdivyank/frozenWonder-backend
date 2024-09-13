@@ -20,7 +20,8 @@ const {
   updateAssignedorder,
   getOrderDetails,
   excelData,
-  availableDate
+  availableDate,
+  filterOrders
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -48,6 +49,7 @@ router.get('/order/:orderId', getOrderDetails);
 
 router.get('/downloadexcel', excelData);
 router.get('/available-dates', availableDate);
+router.get('/filter-orders', filterOrders);
 
 // test
 module.exports = router;
