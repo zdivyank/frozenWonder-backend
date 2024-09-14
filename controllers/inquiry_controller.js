@@ -97,7 +97,7 @@ const downloadInquiries = async (req, res) => {
             user_number: inquiry.user_number,
             region: inquiry.region,
             message: inquiry.message,
-            status: inquiry.status ? 'true' : 'false' // Assuming status is a boolean
+            status: inquiry.status ? 'true' : 'false'
           });
         });
     

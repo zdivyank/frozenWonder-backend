@@ -353,7 +353,7 @@ const addorder = async (req, res) => {
       await checkAndBlockDateAfter15Orders({ order_date, timeslot });
     }
 
-    return res.status(200).json({ message: 'Order placed successfully', order: newOrder });
+    return res.status(200).json({ message: 'Order placed successfully', order: newOrder,unique_code: newOrder.unique_code });
   } catch (error) {
     console.error('Error in addorder:', error);
     return res.status(500).json({ message: 'Failed to place order', error: error.message });
@@ -785,6 +785,7 @@ const excelData = async (req, res) => {
       // { header: 'Price', key: 'order_product_price', width: 10 },
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Total Amount', key: 'total_amount', width: 15 },
+      { header: 'unique_code', key: 'unique_code', width: 15 },
       // { header: 'Agency ID', key: 'agency_id', width: 15 },
       // { header: 'Coupon Code', key: 'coupon_code', width: 15 },
       // { header: 'Assigned Delivery Boys', key: 'assigned_delivery_boys', width: 30 }
@@ -814,6 +815,7 @@ const excelData = async (req, res) => {
         // order_product_price: order.order_product.price,
         status: order.status,
         total_amount: order.total_amount,
+        unique_code: order.unique_code,
         // agency_id: order.agency_id,
         // coupon_code: order.coupon_code,
         // assigned_delivery_boys: order.assigned_delivery_boys
@@ -1021,31 +1023,62 @@ const availableDate = async (req, res) => {
 
 
 
+// const filterOrders = async (req, res) => {
+//   const { pincode, startDate, endDate } = req.query;
+
+// try {
+//   // Build filter criteria
+//   const filters = { status: { $ne: "archive" } }; 
+  
+//   if (pincode) {
+//     filters.pincode = pincode;
+//   }
+//   if (startDate && endDate) {
+//     filters.order_date = {
+//       $gte: new Date(startDate),
+//       $lte: new Date(endDate)
+//     };
+//   }
+
+//   // Fetch filtered data
+//   const orders = await Order.find(filters).populate('agency_id', 'agency_name');
+//   res.status(200).json(orders);
+// } catch (error) {
+//   res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
+// }
+
+// };
+
 const filterOrders = async (req, res) => {
   const { pincode, startDate, endDate } = req.query;
 
-try {
-  // Build filter criteria
-  const filters = { status: { $ne: "archive" } }; // Exclude orders with 'archived' status
-  
-  if (pincode) {
-    filters.pincode = pincode;
-  }
-  if (startDate && endDate) {
-    filters.order_date = {
-      $gte: new Date(startDate),
-      $lte: new Date(endDate)
-    };
-  }
+  try {
+    const filters = { status: { $ne: "archive" } };
+    
+    if (pincode) {
+      filters.pincode = pincode;
+    }
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
-  // Fetch filtered data
-  const orders = await Order.find(filters).populate('agency_id', 'agency_name');
-  res.status(200).json(orders);
-} catch (error) {
-  res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
-}
+      // Adjust end date to include the whole end day
+      end.setHours(23, 59, 59, 999);
 
+      filters.order_date = {
+        $gte: start,
+        $lte: end
+      };
+    }
+
+    const orders = await Order.find(filters).populate('agency_id', 'agency_name');
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
+  }
 };
+
+
 
 module.exports = {
   addorder,

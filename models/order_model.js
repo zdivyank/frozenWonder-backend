@@ -38,6 +38,10 @@ const orderSchema = new mongoose.Schema({
     {
       type: Boolean,
       default:"false"
+    },
+    unique_code: {
+      type: String,
+      unique: true
     }
 });
 
@@ -47,6 +51,65 @@ orderSchema.add({
     date: { type: Date, required: true },
     timeslot: { type: String, required: true }
   }]
+});
+
+
+
+const incrementCode = (code) => {
+  const letters = code.slice(0, 2); // Extract letters (AA, AB, etc.)
+  let number = parseInt(code.slice(2), 10); // Extract numbers (0001, 0002, etc.)
+  
+  if (number < 9999) {
+    // Increment the number part
+    number += 1;
+  } else {
+    // Reset the number part to 0001 and increment the letters part
+    number = 1;
+    
+    const firstLetter = letters.charAt(0);
+    const secondLetter = letters.charAt(1);
+    
+    if (secondLetter !== 'Z') {
+      // Increment the second letter
+      const newSecondLetter = String.fromCharCode(secondLetter.charCodeAt(0) + 1);
+      return `${firstLetter}${newSecondLetter}0001`;
+    } else if (firstLetter !== 'Z') {
+      // Reset second letter to 'A' and increment the first letter
+      const newFirstLetter = String.fromCharCode(firstLetter.charCodeAt(0) + 1);
+      return `${newFirstLetter}A0001`;
+    } else {
+      // When both letters reach 'ZZ', return an error or handle overflow as needed
+      throw new Error('Unique code limit reached');
+    }
+  }
+  
+  // Format the number to be 4 digits (e.g., 0001)
+  const formattedNumber = String(number).padStart(4, '0');
+  
+  return `${letters}${formattedNumber}`;
+};
+
+
+orderSchema.pre('save', async function (next) {
+  if (this.isNew) {
+    try {
+    
+      const lastOrder = await mongoose.model('orders').findOne({}).sort({ unique_code: -1 });
+      let newCode = 'AA0001'; // Starting point for the first code
+      
+      if (lastOrder && lastOrder.unique_code) {
+        newCode = incrementCode(lastOrder.unique_code);
+      }
+      
+      this.unique_code = newCode;
+      console.log('Generated unique code:', newCode); // Log the generated unique code
+      next();
+    } catch (error) {
+      next(error);
+    }
+  } else {
+    next();
+  }
 });
 
 module.exports = mongoose.model('orders', orderSchema);
