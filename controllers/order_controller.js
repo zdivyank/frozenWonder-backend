@@ -396,7 +396,7 @@ const vieworder = async (req, res) => {
 const viewvalidorders = async (req, res) => {
   try {
     const response = await Order.find({
-      status: { $in: ["Pending", "Delivered"] }
+      status: { $in: ["Pending", "Delivered","Canceled"] }
     }).populate('agency_id', 'agency_name');
     if (response.length === 0) {
       return res.status(404).json({ message: 'No Orders Found' });
