@@ -881,55 +881,15 @@ const excelData = async (req, res) => {
 //     return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
 //   }
 // };
-// const availableDate = async (req, res) => {
-//   try {
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0); // Set today's time to midnight
-
-//     let nextAvailableDate = new Date(today);
-//     nextAvailableDate.setDate(today.getDate() + 1); // Start checking from tomorrow
-
-//     while (true) {
-//       // Create start and end boundaries for the current day being checked
-//       const startOfDay = new Date(nextAvailableDate);
-//       startOfDay.setHours(0, 0, 0, 0); // Start of the day
-
-//       const endOfDay = new Date(nextAvailableDate);
-//       endOfDay.setHours(23, 59, 59, 999); // End of the day
-
-//       // Count orders for this specific date
-//       const orderCount = await Order.countDocuments({
-//         order_date: {
-//           $gte: startOfDay,
-//           $lte: endOfDay
-//         }
-//       });
-
-//       // If fewer than 15 orders exist, this date is available
-//       if (orderCount < 15) {
-//         const availableDateString = nextAvailableDate.toISOString().split('T')[0]; // Normalize to YYYY-MM-DD
-//         console.log("Next available date:", availableDateString);
-//         return res.json({ nextAvailableDate: availableDateString });
-//       }
-
-//       // If 15 or more orders exist, move to the next day
-//       nextAvailableDate.setDate(nextAvailableDate.getDate() + 1); // Increment the day
-//     }
-//   } catch (error) {
-//     console.error('Error in availableDate:', error);
-//     return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
-//   }
-// };
 
 // const availableDate = async (req, res) => {
 //   try {
 //     const today = new Date();
 //     today.setHours(0, 0, 0, 0); // Set today's time to midnight for comparison
 
+//     let currentAvailableDate = null;
 //     let nextAvailableDate = new Date(today);
 //     nextAvailableDate.setDate(today.getDate() + 1); // Start checking from tomorrow
-
-//     let currentAvailableDate = null;
 
 //     while (true) {
 //       const startOfDay = new Date(nextAvailableDate);
@@ -946,25 +906,21 @@ const excelData = async (req, res) => {
 //         }
 //       });
 
-//       if (!currentAvailableDate && orderCount < 15) {
-//         currentAvailableDate = new Date(nextAvailableDate);
-//       }
-
-//       // If the current date has 15 orders, move to the next one
-//       if (orderCount >= 15) {
-//         // nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
-//         // continue; // Move to the next date
-//         const diffDays = Math.ceil((nextAvailableDate - today) / (1000 * 60 * 60 * 24));
-//         // Increment nextAvailableDate by the calculated difference plus one day
-//         nextAvailableDate.setDate(today.getDate() + diffDays + 1);
-//         continue; // Move to the next date
-//       }
-
-//       if (currentAvailableDate) {
-//         return res.json({
-//           currentAvailableDate: currentAvailableDate.toISOString().split('T')[0],
-//           nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
-//         });
+//       if (orderCount < 15) {
+//         if (!currentAvailableDate) {
+//           currentAvailableDate = new Date(nextAvailableDate);
+//           // Move to the next day to find the next available date
+//           nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
+//         } else {
+//           // We've found both current and next available dates
+//           return res.json({
+//             currentAvailableDate: currentAvailableDate.toISOString().split('T')[0],
+//             nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
+//           });
+//         }
+//       } else {
+//         // If the current date is fully booked, move to the next day
+//         nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
 //       }
 //     }
 //   } catch (error) {
@@ -972,7 +928,6 @@ const excelData = async (req, res) => {
 //     return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
 //   }
 // };
-
 
 const availableDate = async (req, res) => {
   try {
@@ -990,36 +945,42 @@ const availableDate = async (req, res) => {
       const endOfDay = new Date(nextAvailableDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // Count orders for this specific date
-      const orderCount = await Order.countDocuments({
-        order_date: {
-          $gte: startOfDay,
-          $lte: endOfDay
-        }
+      // Check if this date is blocked
+      const isBlocked = await Order.findOne({
+        'blocked_dates.date': { $gte: startOfDay, $lte: endOfDay }
       });
 
-      if (orderCount < 15) {
-        if (!currentAvailableDate) {
-          currentAvailableDate = new Date(nextAvailableDate);
-          // Move to the next day to find the next available date
-          nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
-        } else {
-          // We've found both current and next available dates
-          return res.json({
-            currentAvailableDate: currentAvailableDate.toISOString().split('T')[0],
-            nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
-          });
+      if (!isBlocked) {
+        // Count orders for this specific date if it's not blocked
+        const orderCount = await Order.countDocuments({
+          order_date: {
+            $gte: startOfDay,
+            $lte: endOfDay
+          }
+        });
+
+        if (orderCount < 15) {
+          if (!currentAvailableDate) {
+            currentAvailableDate = new Date(nextAvailableDate);
+          } else {
+            // Return both current and next available dates
+            return res.json({
+              currentAvailableDate: currentAvailableDate.toISOString().split('T')[0],
+              nextAvailableDate: nextAvailableDate.toISOString().split('T')[0],
+            });
+          }
         }
-      } else {
-        // If the current date is fully booked, move to the next day
-        nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
       }
+
+      // If the current date is fully booked or blocked, move to the next day
+      nextAvailableDate.setDate(nextAvailableDate.getDate() + 1);
     }
   } catch (error) {
     console.error('Error in availableDate:', error);
     return res.status(500).json({ message: 'Failed to fetch available date', error: error.message });
   }
 };
+
 
 
 
