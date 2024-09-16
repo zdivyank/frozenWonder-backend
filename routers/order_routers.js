@@ -23,7 +23,8 @@ const {
   getOrderDetails,
   excelData,
   availableDate,
-  filterOrders
+  filterOrders,
+  editorder
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -44,6 +45,7 @@ router.post('/addAddress',addaddress )
 // router.post('/fetchagencyorder',fetchagencyorder )
 router.post('/fetchagencyorder', fetchagencyorder); 
 router.get('/fetchpendingagencyorder/:_id',fetchPendingagencyorder); 
+router.put('/editorder/:_id',editorder); 
 
 
 router.post('/updateAssignedOrders', updateAssignedorder);

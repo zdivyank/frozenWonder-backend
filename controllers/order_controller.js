@@ -1039,6 +1039,96 @@ const filterOrders = async (req, res) => {
   }
 };
 
+ const editorder = async (req, res) => {
+  try {
+    const { _id } = req.params;
+    const {
+      cust_name,
+      cust_contact,
+      cust_number,
+      pincode,
+      order_date,
+      timeslot,
+      selected_address,
+      cust_address,
+      order_product,
+      coupon_code,
+    } = req.body;
+
+    // Find the existing order first
+    const existingOrder = await Order.findById(_id);
+    if (!existingOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Calculate the total amount if order products are updated
+    let baseTotalAmount = existingOrder.total_amount; // Keep existing total if no new products
+    if (order_product && order_product.length > 0) {
+      baseTotalAmount = 0;
+      order_product.forEach(product => {
+        baseTotalAmount += product.price * product.quantity;
+      });
+    }
+
+    // Prepare the fields to be updated
+    let updateFields = {
+      cust_name: cust_name || existingOrder.cust_name, // Keep existing if not provided
+      cust_contact: cust_contact || existingOrder.cust_contact,
+      cust_number: cust_number || existingOrder.cust_number,
+      pincode: pincode || existingOrder.pincode,
+      order_date: order_date ? new Date(order_date) : existingOrder.order_date, // Convert date if provided
+      timeslot: timeslot || existingOrder.timeslot,
+      selected_address: selected_address || existingOrder.selected_address,
+      cust_address: cust_address || existingOrder.cust_address,
+      order_product: order_product || existingOrder.order_product,
+      total_amount: baseTotalAmount || existingOrder.total_amount, // Use new total amount or existing
+    };
+
+    // If a coupon code is provided, validate and apply it
+    if (coupon_code) {
+      const coupon = await Coupon.findOne({ code: coupon_code });
+
+      if (!coupon) {
+        return res.status(400).json({ message: 'Invalid coupon code' });
+      }
+
+      // Check coupon usage limit
+      if (coupon.usage_count >= coupon.usage_limit) {
+        return res.status(400).json({ message: 'Coupon code usage limit exceeded' });
+      }
+
+      // Apply discount and update total amount
+      const discount = coupon.discount; // Assuming it's a percentage
+      if (baseTotalAmount) {
+        baseTotalAmount -= baseTotalAmount * (discount / 100);
+        updateFields.total_amount = baseTotalAmount;
+      }
+
+      // Update coupon usage count
+      coupon.usage_count += 1;
+      await coupon.save();
+
+      // Save coupon ID in the update
+      updateFields.coupon_code = coupon._id;
+    } else {
+      // If no coupon code provided, retain the existing coupon code
+      updateFields.coupon_code = existingOrder.coupon_code;
+    }
+
+    // Find the order by ID and update it with new data
+    const updatedOrder = await Order.findByIdAndUpdate(_id, updateFields, { new: true });
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    return res.status(200).json({ message: 'Order updated successfully', order: updatedOrder });
+  } catch (error) {
+    console.error('Error in updateOrder:', error);
+    return res.status(500).json({ message: 'Failed to update order', error: error.message });
+  }
+};
+
 
 
 module.exports = {
@@ -1065,5 +1155,6 @@ module.exports = {
   getOrderDetails,
   excelData,
   availableDate,
-  filterOrders
+  filterOrders,
+  editorder
 };
