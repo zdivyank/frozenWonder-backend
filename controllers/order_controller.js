@@ -238,6 +238,8 @@ const addorder = async (req, res) => {
       selected_address,
       cust_address,
       order_product,
+      area,
+      landmark,
       coupon_code, // This is the coupon code provided by the user
     } = req.body;
 
@@ -338,7 +340,9 @@ const addorder = async (req, res) => {
       order_date: new Date(order_date),
       timeslot,
       agency_id: nearestAgency._id,
-      coupon_code: coupon ? coupon._id : null, // Save the ObjectId of the coupon
+      coupon_code: coupon ? coupon._id : null, 
+      area,
+      landmark,
     });
 
     await newOrder.save();
@@ -777,6 +781,8 @@ const excelData = async (req, res) => {
       { header: 'Customer Contact (Number)', key: 'cust_contact', width: 20 },
       { header: 'Customer Addresses', key: 'cust_address', width: 50 }, // Handle array of addresses
       { header: 'Selected Address Index', key: 'selected_address', width: 10 },
+      { header: 'Area', key: 'Area', width: 10 },
+      { header: 'Landmark', key: 'Landmark', width: 10 },
       { header: 'Pincode', key: 'pincode', width: 10 },
       { header: 'Order Date', key: 'order_date', width: 15 },
       { header: 'Timeslot', key: 'timeslot', width: 15 },
@@ -784,6 +790,7 @@ const excelData = async (req, res) => {
       // { header: 'Quantity', key: 'order_product_quantity', width: 10 },
       // { header: 'Price', key: 'order_product_price', width: 10 },
       { header: 'Status', key: 'status', width: 15 },
+      { header: 'Reason', key: 'reason', width: 15 },
       { header: 'Total Amount', key: 'total_amount', width: 15 },
       { header: 'unique_code', key: 'unique_code', width: 15 },
       // { header: 'Agency ID', key: 'agency_id', width: 15 },
@@ -807,6 +814,8 @@ const excelData = async (req, res) => {
         cust_contact: order.cust_contact,
         cust_address: addressString,
         selected_address: order.selected_address,
+        area: order.area,
+        landmark: order.landmark,
         pincode: order.pincode,
         order_date: formattedDate,  // Use formatted date
         timeslot: order.timeslot,
@@ -814,6 +823,7 @@ const excelData = async (req, res) => {
         // order_product_quantity: order.order_product.quantity,
         // order_product_price: order.order_product.price,
         status: order.status,
+        selected_address: order.reason,
         total_amount: order.total_amount,
         unique_code: order.unique_code,
         // agency_id: order.agency_id,
@@ -1053,6 +1063,9 @@ const filterOrders = async (req, res) => {
       cust_address,
       order_product,
       coupon_code,
+      area,
+      landmark,
+      reason
     } = req.body;
 
     // Find the existing order first
@@ -1081,7 +1094,10 @@ const filterOrders = async (req, res) => {
       selected_address: selected_address || existingOrder.selected_address,
       cust_address: cust_address || existingOrder.cust_address,
       order_product: order_product || existingOrder.order_product,
-      total_amount: baseTotalAmount || existingOrder.total_amount, // Use new total amount or existing
+      total_amount: baseTotalAmount || existingOrder.total_amount, 
+      reason: reason || existingOrder.reason, 
+      area: area || existingOrder.area, 
+      landmark: landmark || existingOrder.landmark, 
     };
 
     // If a coupon code is provided, validate and apply it

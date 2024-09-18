@@ -35,14 +35,17 @@ const orderSchema = new mongoose.Schema({
     default: null
   },
   assigned_delivery_boys:
-    {
-      type: Boolean,
-      default:"false"
-    },
-    unique_code: {
-      type: String,
-      unique: true
-    }
+  {
+    type: Boolean,
+    default:"false"
+  },
+  unique_code: {
+    type: String,
+    unique: true
+  },
+  area: { type: String, required: false },
+  landmark:{ type: String, required: false },
+  reason: { type: String, required: false },
 });
 
 // Add blocked_dates field to the schema
