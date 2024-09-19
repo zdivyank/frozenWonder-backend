@@ -1145,6 +1145,31 @@ const filterOrders = async (req, res) => {
   }
 };
 
+// Controller to update order status
+const updatereason = async (req, res) => {
+  try {
+    const { _id, status, reason } = req.body;
+
+    const order = await Order.findById(_id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    order.status = status;
+    if (status === 'Canceled') {
+      order.reason = reason;
+    } else {
+      order.reason = ''; // Clear reason if status is not Canceled
+    }
+
+    await order.save();
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+
 
 
 module.exports = {
@@ -1172,5 +1197,7 @@ module.exports = {
   excelData,
   availableDate,
   filterOrders,
-  editorder
+  editorder,
+  updatereason
+
 };

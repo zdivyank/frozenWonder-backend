@@ -1,20 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  addorder, 
+const {
+  addorder,
   vieworder,
   viewvalidorders,
   viewarchivedorders,
-  deleteorder, 
+  deleteorder,
   locationWiseOrder,
   allPincode,
   updateStatus,
-  blockDate, 
-  fetchBlockedDates, 
+  blockDate,
+  fetchBlockedDates,
   unblockDate,
-  fetchFullday, 
-  isAlreadyuser, 
-  deleteAdress, 
+  fetchFullday,
+  isAlreadyuser,
+  deleteAdress,
   addaddress,
   fetchagencyorder,
   assignOrdersToDeliveryBoys,
@@ -24,7 +24,8 @@ const {
   excelData,
   availableDate,
   filterOrders,
-  editorder
+  editorder,
+  updatereason
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -41,11 +42,11 @@ router.route("/blocked-dates").get(fetchBlockedDates);
 router.route("/fullday").get(fetchFullday);
 router.route("/isAlreadyuser").post(isAlreadyuser);
 router.route("/delete-address").delete(deleteAdress);
-router.post('/addAddress',addaddress )
+router.post('/addAddress', addaddress)
 // router.post('/fetchagencyorder',fetchagencyorder )
-router.post('/fetchagencyorder', fetchagencyorder); 
-router.get('/fetchpendingagencyorder/:_id',fetchPendingagencyorder); 
-router.put('/editorder/:_id',editorder); 
+router.post('/fetchagencyorder', fetchagencyorder);
+router.get('/fetchpendingagencyorder/:_id', fetchPendingagencyorder);
+router.put('/editorder/:_id', editorder);
 
 
 router.post('/updateAssignedOrders', updateAssignedorder);
@@ -57,5 +58,6 @@ router.get('/downloadexcel', excelData);
 router.get('/available-dates', availableDate);
 router.get('/filter-orders', filterOrders);
 
+router.put('/order/status', updatereason);
 // test
 module.exports = router;
