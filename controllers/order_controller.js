@@ -776,23 +776,23 @@ const excelData = async (req, res) => {
     // Define columns for the worksheet, including Serial No
     worksheet.columns = [
       { header: 'Serial No', key: 'serial_no', width: 10 },  // New Serial No field
+      { header: 'unique_code', key: 'unique_code', width: 15 },
       { header: 'Customer Name', key: 'cust_name', width: 20 },
-      { header: 'Customer Number (Email)', key: 'cust_number', width: 30 },
-      { header: 'Customer Contact (Number)', key: 'cust_contact', width: 20 },
       { header: 'Customer Addresses', key: 'cust_address', width: 50 }, // Handle array of addresses
       { header: 'Selected Address Index', key: 'selected_address', width: 10 },
       { header: 'Area', key: 'Area', width: 10 },
       { header: 'Landmark', key: 'Landmark', width: 10 },
       { header: 'Pincode', key: 'pincode', width: 10 },
+      { header: 'Customer Contact (Number)', key: 'cust_contact', width: 20 },
       { header: 'Order Date', key: 'order_date', width: 15 },
       { header: 'Timeslot', key: 'timeslot', width: 15 },
-      { header: 'Product Name', key: 'order_product_name', width: 50 },
       // { header: 'Quantity', key: 'order_product_quantity', width: 10 },
       // { header: 'Price', key: 'order_product_price', width: 10 },
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Reason', key: 'reason', width: 15 },
+      { header: 'Product Name', key: 'order_product_name', width: 50 },
       { header: 'Total Amount', key: 'total_amount', width: 15 },
-      { header: 'unique_code', key: 'unique_code', width: 15 },
+      { header: 'Customer Number (Email)', key: 'cust_number', width: 30 },
       // { header: 'Agency ID', key: 'agency_id', width: 15 },
       // { header: 'Coupon Code', key: 'coupon_code', width: 15 },
       // { header: 'Assigned Delivery Boys', key: 'assigned_delivery_boys', width: 30 }
@@ -809,23 +809,23 @@ const excelData = async (req, res) => {
       // Add row data with Serial No
       worksheet.addRow({
         serial_no: index + 1,  // Serial number starting from 1
+        unique_code: order.unique_code,
         cust_name: order.cust_name,
-        cust_number: order.cust_number,
-        cust_contact: order.cust_contact,
         cust_address: addressString,
         selected_address: order.selected_address,
         area: order.area,
         landmark: order.landmark,
         pincode: order.pincode,
+        cust_contact: order.cust_contact,
         order_date: formattedDate,  // Use formatted date
         timeslot: order.timeslot,
         order_product_name: order.order_product,
         // order_product_quantity: order.order_product.quantity,
         // order_product_price: order.order_product.price,
         status: order.status,
-        selected_address: order.reason,
+        reason: order.reason,
         total_amount: order.total_amount,
-        unique_code: order.unique_code,
+        cust_number: order.cust_number,
         // agency_id: order.agency_id,
         // coupon_code: order.coupon_code,
         // assigned_delivery_boys: order.assigned_delivery_boys
@@ -1020,34 +1020,69 @@ const availableDate = async (req, res) => {
 
 // };
 
+// const filterOrders = async (req, res) => {
+//   const { pincode, startDate, endDate } = req.query;
+
+//   try {
+//     const filters = { status: { $ne: "archive" } };
+    
+//     if (pincode) {
+//       filters.pincode = pincode;
+//     }
+//     if (startDate && endDate) {
+//       const start = new Date(startDate);
+//       const end = new Date(endDate);
+
+//       // Adjust end date to include the whole end day
+//       end.setHours(23, 59, 59, 999);
+
+//       filters.order_date = {
+//         $gte: start,
+//         $lte: end
+//       };
+//     }
+
+//     const orders = await Order.find(filters)
+//       .populate('agency_id', 'agency_name')
+//       .sort({ order_date: 1 }); // Sort by order_date in ascending order
+
+//     res.status(200).json(orders);
+//   } catch (error) {
+//     res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
+//   }
+// };
+
 const filterOrders = async (req, res) => {
-  const { pincode, startDate, endDate } = req.query;
+  const { pincode, startDate, endDate, status } = req.query;
 
   try {
-    const filters = { status: { $ne: "archive" } };
-    
+    const filters = { status: { $ne: 'archive' } };
+
     if (pincode) {
       filters.pincode = pincode;
+    }
+    if (status) {
+      filters.status = status;
     }
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-
-      // Adjust end date to include the whole end day
-      end.setHours(23, 59, 59, 999);
+      end.setHours(23, 59, 59, 999); // Include the entire end day
 
       filters.order_date = {
         $gte: start,
-        $lte: end
+        $lte: end,
       };
     }
 
     const orders = await Order.find(filters).populate('agency_id', 'agency_name');
     res.status(200).json(orders);
   } catch (error) {
-    res.status(400).json({ "Message": "Error fetching orders", "Error": error.message });
+    res.status(400).json({ Message: 'Error fetching orders', Error: error.message });
   }
 };
+
+
 
  const editorder = async (req, res) => {
   try {
@@ -1145,7 +1180,6 @@ const filterOrders = async (req, res) => {
   }
 };
 
-// Controller to update order status
 const updatereason = async (req, res) => {
   try {
     const { _id, status, reason } = req.body;
