@@ -25,7 +25,8 @@ const {
   availableDate,
   filterOrders,
   editorder,
-  updatereason
+  updatereason,
+  statusWiseOrder
 } = require('../controllers/order_controller');
 
 router.route("/addorder").post(addorder);
@@ -59,5 +60,6 @@ router.get('/available-dates', availableDate);
 router.get('/filter-orders', filterOrders);
 
 router.put('/order/status', updatereason);
+router.route("/orderstatus").post(statusWiseOrder);
 // test
 module.exports = router;

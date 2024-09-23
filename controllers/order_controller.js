@@ -1204,6 +1204,34 @@ const updatereason = async (req, res) => {
 };
 
 
+const statusWiseOrder = async (req, res) => {
+  const { status } = req.body;
+  const filters = { status: { $ne: 'archive' } };
+
+  
+  try {
+    if (status) {
+      const response = await Order.find({ status }).populate('agency_id', 'agency_name');
+      if (response.length === 0) {
+        return res.status(404).json({ message: 'No Orders Found for this Pincode' });
+      }
+      return res.status(200).json({ orders: response, message: 'Orders Fetched Successfully' })
+    }
+    else
+    {
+      const response = await Order.find(filters).populate('agency_id', 'agency_name');
+      if (response.length === 0) {
+        return res.status(404).json({ message: 'No Orders Found for this Pincode' });
+      }
+      return res.status(200).json({ orders: response, message: 'Orders Fetched Successfully' })
+    }
+  
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: 'Failed to fetch orders for this location' });
+  }
+};
+
 
 
 module.exports = {
@@ -1232,6 +1260,7 @@ module.exports = {
   availableDate,
   filterOrders,
   editorder,
-  updatereason
+  updatereason,
+  statusWiseOrder
 
 };
