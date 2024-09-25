@@ -1071,7 +1071,7 @@ const filterOrders = async (req, res) => {
 
       filters.order_date = {
         $gt: start,
-        $lt: end,
+        $lte: end+1,
       };
     }
 
