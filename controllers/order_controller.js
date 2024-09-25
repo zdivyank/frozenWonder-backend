@@ -313,9 +313,9 @@ const addorder = async (req, res) => {
     const now = moment();
     const orderDateTime = moment(order_date + ' ' + (timeslot === 'morning' ? '08:00' : '16:00'), 'YYYY-MM-DD HH:mm');
 
-    if (orderDateTime.diff(now, 'hours') < 12) {
-      return res.status(400).json({ message: 'Orders must be placed at least 12 hours in advance.' });
-    }
+    // if (orderDateTime.diff(now, 'hours') < 12) {
+    //   return res.status(400).json({ message: 'Orders must be placed at least 12 hours in advance.' });
+    // }
 
     // *** Check if the order limit has been reached for this date ***
     const orderCountForDate = await Order.countDocuments({
@@ -1074,7 +1074,6 @@ const filterOrders = async (req, res) => {
         $lte: end+1,
       };
     }
-
     // const orders = await Order.find(filters).populate('agency_id', 'agency_name');
     const orders = await Order.find(filters).sort({ order_date: 1 }).populate('agency_id', 'agency_name');
     res.status(200).json(orders);
