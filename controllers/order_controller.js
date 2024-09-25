@@ -1067,15 +1067,16 @@ const filterOrders = async (req, res) => {
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999); // Include the entire end day
+      end.setHours(23, 59, 59, 999); 
 
       filters.order_date = {
-        $gte: start,
-        $lte: end,
+        $gt: start,
+        $lt: end,
       };
     }
 
-    const orders = await Order.find(filters).populate('agency_id', 'agency_name');
+    // const orders = await Order.find(filters).populate('agency_id', 'agency_name');
+    const orders = await Order.find(filters).sort({ order_date: 1 }).populate('agency_id', 'agency_name');
     res.status(200).json(orders);
   } catch (error) {
     res.status(400).json({ Message: 'Error fetching orders', Error: error.message });
