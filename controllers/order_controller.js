@@ -51,7 +51,7 @@ async function geocodeAddress(address, retries = 3) {
 
       // Ensure the address includes city and state
       if (!address.includes('Surat') && !address.includes('Gujarat')) {
-        address += ', Surat, Gujarat'; // Append default city and state
+        address += ', Surat, Gujarat'; 
       }
 
       const response = await opencage.geocode({ q: address, key: process.env.OPENCAGE_API_KEY });
@@ -69,7 +69,7 @@ async function geocodeAddress(address, retries = 3) {
       }
     } catch (error) {
       console.error(`Error geocoding address (Attempt ${attempt + 1}):`, error);
-      if (attempt === retries - 1) throw error; // Throw on last attempt
+      if (attempt === retries - 1) throw error;
     }
   }
   return null;
@@ -78,12 +78,12 @@ async function geocodeAddress(address, retries = 3) {
 
 async function findNearestDistributor(customerCoords, distributors) {
   if (distributors.length === 1) {
-    return distributors[0]; // Return the only available distributor
+    return distributors[0]; 
   }
 
   let nearestDistributor = null;
   let shortestDistance = Infinity;
-  const maxDistanceKm = 500; // Define a reasonable max distance for delivery
+  const maxDistanceKm = 500; 
 
   for (const distributor of distributors) {
     try {
@@ -266,7 +266,7 @@ const addorder = async (req, res) => {
       }
 
       // Apply discount from coupon
-      const discount = coupon.discount; // Assuming discount is a percentage
+      const discount = coupon.discount; 
       baseTotalAmount -= baseTotalAmount * (discount / 100);
 
       // Update coupon usage count
@@ -282,9 +282,9 @@ const addorder = async (req, res) => {
 
     const customerCoords = await geocodeAddress(addressToGeocode);
 
-    if (!customerCoords) {
-      return res.status(400).json({ message: 'Failed to geocode customer address' });
-    }
+      // if (!customerCoords) {
+      //   return res.status(400).json({ message: 'Failed to geocode customer address' });
+      // }
 
     const distributors = await Agency.find({});
     const nearestAgency = await findNearestDistributor(customerCoords, distributors);
