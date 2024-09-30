@@ -583,11 +583,11 @@ const fetchFullday = async (req, res) => {
 };
 
 const isAlreadyuser = async (req, res) => {
-  const { cust_number } = req.body;
-  console.log('Received request with cust_number:', cust_number); // Add this line
+  const { cust_contact } = req.body;
+  console.log('Received request with cust_contact:', cust_contact); // Add this line
   try {
     // Find the most recent order for the given customer number
-    const response = await Order.find({ cust_number })
+    const response = await Order.find({ cust_contact })
       .sort({ order_date: -1 }) // Assuming 'order_date' is the field representing the order date
       .limit(1); // Limit to the most recent order
 
