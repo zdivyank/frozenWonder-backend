@@ -11,8 +11,9 @@ cloudinary.config({
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+
 const addTestimonails = async (req, res) => {
-  const { cust_name, message, verify,contact_number } = req.body;
+  const { cust_name, message, verify, contact_number } = req.body;
 
   try {
     // Check if all required fields are present
@@ -26,7 +27,14 @@ const addTestimonails = async (req, res) => {
     if (req.file) {
       const uploadPromise = new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          { folder: 'uploads', resource_type: 'auto' },
+          {
+            folder: 'uploads',
+            resource_type: 'auto',
+            transformation: [
+              { width: 800, height: 600, crop: 'limit' }, // Limit the dimensions to 800x600 (adjust as needed)
+              { quality: 'auto:good' } // Use automatic quality selection with good quality
+            ]
+          },
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
@@ -74,54 +82,6 @@ const getVerifiedtestimonail = async (req, res) => {
     res.status(400).json({ "message": error.message });
   }
 };
-
-// const updateTestimonails = async (req, res) => {
-//   try {
-//     const { _id } = req.params;
-//     const { cust_name, message,verify } = req.body;
-
-//     let updateData = {};
-
-//     if (cust_name) updateData.cust_name = cust_name;
-//     if (message) updateData.message = message;
-//     if (verify) updateData.verify = verify;
-
-//     // If a new image file is uploaded
-//     if (req.file) {
-//       // Upload new image to Cloudinary
-//       const uploadPromise = new Promise((resolve, reject) => {
-//         const uploadStream = cloudinary.uploader.upload_stream(
-//           { folder: 'uploads', resource_type: 'auto' },
-//           (error, result) => {
-//             if (error) reject(error);
-//             else resolve(result);
-//           }
-//         );
-//         streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
-//       });
-
-//       const uploadResult = await uploadPromise;
-//       updateData.image = uploadResult.secure_url; // Update image URL
-//     }
-
-//     // Update testimonial in the database
-//     const updatedTest = await Testimonails.findByIdAndUpdate(
-//       _id,
-//       { $set: updateData },
-//       { new: true }
-//     );
-
-//     if (!updatedTest) {
-//       return res.status(404).json({ message: 'Testimonial not found' });
-//     }
-
-//     return res.status(200).json({ message: 'Testimonial updated successfully', testimonial: updatedTest });
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({ message: 'Error updating Testimonial' });
-//   }
-// };
-
 
 const updateTestimonails = async (req, res) => {
   try {
